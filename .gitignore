@@ -1,0 +1,17 @@
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code workspace
+.claude/
+
+# Session notes (developer-only, don't distribute)
+SESSION_STATE.md
+*.local.md
+
+# Logs and temp
+*.log
+tmp/
