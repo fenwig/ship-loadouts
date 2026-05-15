@@ -8,8 +8,7 @@ Thumbs.db
 # Claude Code workspace
 .claude/
 
-# Session notes (developer-only, don't distribute)
-SESSION_STATE.md
+# Local-only files (developer machine-specific)
 *.local.md
 
 # Logs and temp

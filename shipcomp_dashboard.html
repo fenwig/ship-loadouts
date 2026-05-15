@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Loadouts — Dashboard</title>
+
+  <!-- Google Fonts for typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Exo+2:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="shipcomp-styles.css">
+
+  <style>
+    .dashboard-nav {
+      background: var(--sl-bg-panel);
+      border-bottom: 1px solid var(--sl-border-secondary);
+      margin-bottom: var(--sl-spacing-xl);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--sl-spacing-lg);
+      flex-wrap: wrap;
+      padding: var(--sl-spacing-lg);
+      padding-top: 0;
+    }
+
+    .nav-link {
+      font-family: var(--sl-font-data);
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      border: 1px solid var(--sl-border-dim);
+      border-radius: var(--sl-border-radius);
+      cursor: pointer;
+      background: transparent;
+      color: var(--sl-text-secondary);
+      transition: all var(--sl-transition-fast);
+    }
+
+    .nav-link:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      color: var(--sl-text-dim);
+    }
+
+    .nav-link:hover {
+      color: var(--sl-accent-primary);
+      border-color: var(--sl-accent-primary);
+      background: rgba(0, 217, 255, 0.05);
+    }
+
+    .nav-link.active {
+      background: var(--sl-accent-secondary);
+      color: var(--sl-accent-primary);
+      border-color: var(--sl-accent-secondary);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--sl-spacing-lg);
+      margin-bottom: var(--sl-spacing-xl);
+    }
+
+    .module-frame {
+      display: none;
+      width: 100%;
+      border: none;
+      min-height: calc(100vh - 200px);
+    }
+
+    .module-frame.active {
+      display: block;
+    }
+
+    .sync-status {
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      margin-top: var(--sl-spacing-lg);
+      padding: var(--sl-spacing-lg);
+      padding-top: var(--sl-spacing-lg);
+      border-top: 1px solid var(--sl-border-dim);
+    }
+
+    .logo-section {
+      width: 100%;
+      padding: 0;
+      margin: 0 0 var(--sl-spacing-lg) 0;
+    }
+
+    .logo-banner {
+      max-width: 1200px;
+      max-height: 150px;
+      height: auto;
+      display: block;
+      border-radius: var(--sl-border-radius-lg);
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-nav">
+    <div class="logo-section">
+      <img src="header.png" alt="Ship Loadout Manager" class="logo-banner">
+    </div>
+
+    <div class="nav-links">
+      <button class="nav-link active" onclick="switchModule('dashboard')">Dashboard</button>
+      <button class="nav-link" onclick="switchModule('hangar')">Hangar</button>
+      <button class="nav-link" onclick="switchModule('loadouts')">Loadouts</button>
+      <button class="nav-link" onclick="switchModule('itemsneeded')">Items Needed</button>
+      <button class="nav-link" onclick="switchModule('forgeworks')">Forgeworks Import</button>
+      <button class="nav-link" onclick="switchModule('reports')">Reports</button>
+      <button class="nav-link" onclick="switchModule('datasync')">Data Sync</button>
+      <button class="nav-link" onclick="switchModule('codex')">Codex</button>
+      <button class="nav-link" disabled onclick="return false;">Inventory</button>
+    </div>
+
+    <div class="sync-status">
+      Last sync: <span id="last-sync">Never</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Dashboard Content -->
+    <div id="dashboard-content" class="module-frame active">
+      <div class="module-header">
+        <p class="module-eyebrow">System Overview</p>
+        <h1 class="module-title">Dashboard</h1>
+      </div>
+
+      <div class="status-grid">
+        <div class="stat-card">
+          <div class="stat-label">Ships in Hangar</div>
+          <div class="stat-value" id="stat-ships">0</div>
+          <div class="stat-detail">Owned / Pledged</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Total Hardpoints</div>
+          <div class="stat-value" id="stat-hardpoints">0</div>
+          <div class="stat-detail">Trackable slots</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Stock Hardpoints</div>
+          <div class="stat-value" id="stat-stock">0</div>
+          <div class="stat-detail">Unmodified slots</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Items Needed</div>
+          <div class="stat-value" id="stat-needed">0</div>
+          <div class="stat-detail">Shopping list</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Data Version</div>
+          <div class="stat-value text-accent" id="stat-version" style="font-size: 20px;">—</div>
+          <div class="stat-detail">Game patch</div>
+        </div>
+      </div>
+
+      <div style="background: var(--sl-bg-card); border: 1px solid var(--sl-border-secondary); border-radius: var(--sl-border-radius-lg); padding: var(--sl-spacing-lg);">
+        <h3 class="text-accent">Getting Started</h3>
+        <p class="text-secondary" style="margin: var(--sl-spacing-md) 0 0 0;">
+          1. Go to <strong>Data Sync</strong> to pull ship and component reference data from Star Citizen Wiki API<br/>
+          2. Go to <strong>Hangar</strong> to mark which ships you own (Owned or Pledged)<br/>
+          3. Go to <strong>Loadouts</strong> to set your target components for each ship<br/>
+          4. Go to <strong>Items Needed</strong> to see what you need to acquire or craft<br/>
+        </p>
+      </div>
+    </div>
+
+    <!-- Module Iframes (loaded on demand) -->
+    <iframe id="datasync-frame" class="module-frame" src="shipcomp_datasync.html"></iframe>
+    <iframe id="hangar-frame" class="module-frame" src="shipcomp_hangar.html"></iframe>
+    <iframe id="loadouts-frame" class="module-frame" src="shipcomp_loadouts.html"></iframe>
+    <iframe id="inventory-frame" class="module-frame" src="shipcomp_inventory.html"></iframe>
+    <iframe id="itemsneeded-frame" class="module-frame" src="shipcomp_itemsneeded.html"></iframe>
+    <iframe id="forgeworks-frame" class="module-frame" src="shipcomp_forgeworks.html"></iframe>
+    <iframe id="reports-frame" class="module-frame" src="shipcomp_reports.html"></iframe>
+    <iframe id="codex-frame" class="module-frame" src="shipcomp_codex.html"></iframe>
+  </div>
+
+  <script>
+    // Initialize dashboard on load
+    function initDashboard() {
+      updateDashboardStats();
+      updateLastSync();
+    }
+
+    // Update status cards from localStorage
+    function updateDashboardStats() {
+      const hangar = JSON.parse(localStorage.getItem('shipcomp-hangar') || '[]');
+      const loadouts = JSON.parse(localStorage.getItem('shipcomp-loadouts') || '{}');
+      const syncMeta = JSON.parse(localStorage.getItem('shipcomp-sync-meta') || '{}');
+
+      // Count ships (hangar is now an array)
+      const shipCount = Array.isArray(hangar) ? hangar.length : Object.keys(hangar).length;
+      document.getElementById('stat-ships').textContent = shipCount;
+
+      // Calculate total hardpoints and stock hardpoints
+      let totalHardpoints = 0;
+      let stockHardpoints = 0;
+      for (const shipId in loadouts) {
+        const shipLoadout = loadouts[shipId];
+        for (const slotId in shipLoadout) {
+          totalHardpoints++;
+          const slot = shipLoadout[slotId];
+          if (slot.current === slot.stock) {
+            stockHardpoints++;
+          }
+        }
+      }
+      document.getElementById('stat-hardpoints').textContent = totalHardpoints;
+      document.getElementById('stat-stock').textContent = stockHardpoints;
+
+      // Calculate items needed
+      let itemsNeeded = 0;
+      for (const shipId in loadouts) {
+        const shipLoadout = loadouts[shipId];
+        for (const slotId in shipLoadout) {
+          const slot = shipLoadout[slotId];
+          if (slot.current !== slot.target) {
+            itemsNeeded++;
+          }
+        }
+      }
+      document.getElementById('stat-needed').textContent = itemsNeeded;
+
+      // Game version
+      if (syncMeta.gameVersion) {
+        document.getElementById('stat-version').textContent = syncMeta.gameVersion;
+      }
+    }
+
+    // Update last sync time
+    function updateLastSync() {
+      const syncMeta = JSON.parse(localStorage.getItem('shipcomp-sync-meta') || '{}');
+      if (syncMeta.date) {
+        const date = new Date(syncMeta.date);
+        const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        document.getElementById('last-sync').textContent = formatted;
+      }
+    }
+
+    // Switch between modules
+    function switchModule(moduleName) {
+      // Hide all frames
+      document.querySelectorAll('.module-frame').forEach(frame => {
+        frame.classList.remove('active');
+      });
+      document.getElementById('dashboard-content').style.display = 'none';
+
+      // Hide all nav buttons as active
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+
+      // Show selected module
+      if (moduleName === 'dashboard') {
+        document.getElementById('dashboard-content').style.display = 'block';
+        document.querySelectorAll('.nav-link')[0].classList.add('active');
+        updateDashboardStats();
+      } else {
+        const frameId = moduleName + '-frame';
+        const frame = document.getElementById(frameId);
+        if (frame) {
+          frame.classList.add('active');
+        }
+        // Mark nav link as active
+        event.target.classList.add('active');
+      }
+    }
+
+    // Listen for storage changes (when other modules update data)
+    window.addEventListener('storage', () => {
+      updateDashboardStats();
+      updateLastSync();
+    });
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

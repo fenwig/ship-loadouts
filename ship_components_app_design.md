@@ -235,6 +235,114 @@ Following Forgeworks' naming conventions:
 
 ---
 
+## Development & Implementation
+
+### Color Palette (Implemented)
+
+**Cool Blue Minimalist** — A sleek, professional sci-fi aesthetic with teal and blue accents.
+
+CSS Variables (in `shipcomp-styles.css`):
+```css
+--sl-bg-deep: #0d1b2a;           /* Page background */
+--sl-bg-panel: #1a2634;          /* Headers, panels */
+--sl-bg-card: #242e3d;           /* Cards, inputs */
+--sl-accent-primary: #00d9ff;    /* Cyan (main accent) */
+--sl-accent-secondary: #0088cc;  /* Blue (secondary) */
+--sl-text-primary: #e8f4f8;      /* Main text */
+--sl-text-secondary: #9db4c1;    /* Supporting text */
+--sl-status-success: #4caf50;    /* Success states */
+--sl-status-warning: #ffb84d;    /* Warnings */
+--sl-status-alert: #ff6b6b;      /* Errors */
+```
+
+All pages use these variables for consistency. No hardcoded colors.
+
+### Development Environment
+
+- **Editor:** Claude Code (desktop app)
+- **Folder:** `D:\Support Files\ship-loadouts app\`
+- **Tech Stack:** Vanilla HTML/CSS/JavaScript (no build step, no framework)
+- **Persistence:** Browser localStorage only
+- **Testing:** Direct file opening in Chrome/Edge (CORS-friendly for Wiki API)
+
+### File Structure (as built)
+
+```
+ship-loadouts app/
+├── shipcomp_dashboard.html       # Dashboard: Navigation hub + status cards ✅
+├── shipcomp_datasync.html        # Data Sync: Wiki API sync (FULLY BUILT) ✅
+├── shipcomp_hangar.html          # Hangar: Mark owned ships (stub)
+├── shipcomp_loadouts.html        # Loadouts: Stock | Current | Target grid (stub)
+├── shipcomp_inventory.html       # Inventory: Component management (stub)
+├── shipcomp_itemsneeded.html     # Items Needed: Gap analysis (stub)
+├── shipcomp_forgeworks.html      # Forgeworks Import: JSON import (stub)
+├── shipcomp_reports.html         # Reports: Spec sheets (stub)
+├── shipcomp_codex.html           # Codex: Documentation (stub)
+├── shipcomp-styles.css           # Global styles ✅
+├── shipcomp-utils.js             # Shared utilities ✅
+└── README.md                     # Documentation ✅
+```
+
+### Data Sync Implementation (Completed)
+
+The Data Sync page is fully functional and handles:
+
+**API Integration:**
+- Paginated ship fetching (50 per page, handles pagination automatically)
+- Bulk component fetching by type (11 trackable types)
+- Automatic game version detection from first ship response
+- CORS-friendly (no special headers needed)
+
+**User Experience:**
+- Real-time progress bar (0–100%)
+- Detailed sync log with timestamps and color-coded messages (info/success/error)
+- Sync history (up to 20 most recent syncs)
+- Status display (idle/syncing/success/error states)
+- Start Sync and Clear Data buttons
+- Auto-scrolling log view
+
+**Data Flow:**
+1. Fetch all ships with pagination → normalize → store in `shipcomp-ships`
+2. Fetch each component type sequentially → normalize → aggregate → store in `shipcomp-components`
+3. Extract game version from first ship
+4. Set sync metadata (date, gameVersion, count)
+5. Add entry to sync history log (keep last 20)
+
+**Error Handling:**
+- Try/catch wraps entire sync process
+- Errors logged to UI with descriptive messages
+- Sync status changes to "error" state on failure
+- Buttons re-enable regardless of outcome
+
+### Naming Conventions (Updated)
+
+- **Pages** referred to by function name, not "Module XX"
+  - ✅ "Data Sync" (not "Module 06")
+  - ✅ "Hangar" (not "Module 02")
+  - ✅ "Loadouts" (not "Module 03")
+
+- **CSS variable prefix:** `--sl-` (Ship Loadouts)
+- **localStorage keys:** `shipcomp-*` (ship components)
+- **Component types:** Match Star Citizen Wiki API exactly (Shield, PowerPlant, QuantumDrive, Cooler, Radar, WeaponMining, TractorBeam, TowingBeam, WeaponGun, Refuel, Salvage)
+
+### Testing Checklist
+
+- [ ] Data Sync fetches ships and components without errors
+- [ ] Progress bar updates smoothly (0–100%)
+- [ ] Sync log displays timestamped entries
+- [ ] Sync history persists across page reloads
+- [ ] Data stored in localStorage under `shipcomp-*` keys
+- [ ] Dashboard displays ship/component counts after sync
+- [ ] Hangar page lists available ships from reference data
+- [ ] Loadouts page shows Stock column populated from ship data
+- [ ] Inventory page can add/remove components
+- [ ] Items Needed calculates gap between Current and Target
+- [ ] Forgeworks Import accepts JSON and adds crafted items
+- [ ] Reports generates spec sheets
+- [ ] All pages style consistently with Cool Blue Minimalist palette
+
+---
+
 ## What's Out of Scope for v1
 
 - Crafting itself (handled entirely by Forgeworks).

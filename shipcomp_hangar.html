@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Loadouts — My Hangar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Exo+2:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shipcomp-styles.css">
+  <script src="shipcomp-utils.js"></script>
+
+  <style>
+    .hangar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sl-spacing-xl);
+      flex-wrap: wrap;
+      gap: var(--sl-spacing-lg);
+    }
+
+    .hangar-list {
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      overflow: hidden;
+    }
+
+    .hangar-list-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 100px;
+      gap: var(--sl-spacing-lg);
+      padding: var(--sl-spacing-lg);
+      background: var(--sl-bg-panel);
+      border-bottom: 1px solid var(--sl-border-secondary);
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: bold;
+    }
+
+    .hangar-entry {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 100px;
+      gap: var(--sl-spacing-lg);
+      align-items: center;
+      padding: var(--sl-spacing-lg);
+      border-bottom: 1px solid var(--sl-border-dim);
+      font-size: 13px;
+    }
+
+    .hangar-entry:last-child {
+      border-bottom: none;
+    }
+
+    .hangar-entry:hover {
+      background: var(--sl-bg-hover);
+    }
+
+    .entry-ship-name {
+      font-family: var(--sl-font-body);
+      color: var(--sl-text-primary);
+      font-weight: 500;
+    }
+
+    .entry-status {
+      display: inline-block;
+    }
+
+    .entry-acquired {
+      font-family: var(--sl-font-data);
+      color: var(--sl-text-secondary);
+      font-size: 12px;
+    }
+
+    .entry-notes {
+      font-family: var(--sl-font-body);
+      color: var(--sl-text-secondary);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: var(--sl-spacing-sm);
+    }
+
+    .entry-actions button {
+      padding: 4px 8px;
+      font-size: 11px;
+      min-width: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--sl-spacing-xl);
+      color: var(--sl-text-secondary);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--sl-bg-panel);
+      border: 1px solid var(--sl-accent-primary);
+      border-radius: var(--sl-border-radius-lg);
+      padding: var(--sl-spacing-xl);
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 217, 255, 0.2);
+    }
+
+    .modal-title {
+      font-family: var(--sl-font-title);
+      font-size: 18px;
+      color: var(--sl-text-primary);
+      margin: 0 0 var(--sl-spacing-lg) 0;
+    }
+
+    .modal-section {
+      margin-bottom: var(--sl-spacing-lg);
+    }
+
+    .modal-field {
+      margin-bottom: var(--sl-spacing-md);
+    }
+
+    .modal-label {
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--sl-spacing-sm);
+      display: block;
+    }
+
+    .modal-input,
+    .modal-select {
+      width: 100%;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      color: var(--sl-text-primary);
+      font-family: var(--sl-font-body);
+      font-size: 14px;
+      border-radius: var(--sl-border-radius);
+      box-sizing: border-box;
+    }
+
+    .modal-input:focus,
+    .modal-select:focus {
+      outline: none;
+      border-color: var(--sl-accent-primary);
+      box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.1);
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sl-spacing-md);
+      margin-bottom: var(--sl-spacing-lg);
+    }
+
+    .ship-list {
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius);
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--sl-bg-card);
+    }
+
+    .ship-list-item {
+      padding: var(--sl-spacing-md);
+      border-bottom: 1px solid var(--sl-border-dim);
+      cursor: pointer;
+      transition: all var(--sl-transition-fast);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ship-list-item:hover {
+      background: var(--sl-bg-hover);
+      border-color: var(--sl-accent-primary);
+    }
+
+    .ship-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .ship-item-name {
+      font-family: var(--sl-font-body);
+      color: var(--sl-text-primary);
+      flex-grow: 1;
+    }
+
+    .ship-item-specs {
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      margin-left: var(--sl-spacing-md);
+      text-align: right;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: var(--sl-spacing-md);
+      margin-top: var(--sl-spacing-xl);
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-lg);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="module-header">
+      <p class="module-eyebrow">Your Fleet</p>
+      <h1 class="module-title">My Hangar</h1>
+    </div>
+
+    <!-- Header with Add Button -->
+    <div class="hangar-header">
+      <div></div>
+      <button class="btn-primary" onclick="openAddModal()">+ ADD SHIPS TO HANGAR</button>
+    </div>
+
+    <!-- Hangar List -->
+    <div id="hangarContainer" class="hangar-list">
+      <div class="empty-state">
+        <p class="text-secondary">Your hangar is empty.</p>
+        <p class="text-dim" style="font-size: 12px;">Go to <strong>Data Sync</strong> to load available ships, then click "ADD SHIPS TO HANGAR" to get started.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Ship Modal -->
+  <div id="addModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+      <h2 class="modal-title" style="margin-bottom: var(--sl-spacing-lg);">Add Ships to Hangar</h2>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--sl-spacing-xl); height: 500px; overflow: hidden;">
+
+        <!-- LEFT COLUMN: Search, Filters, Ship List -->
+        <div style="display: flex; flex-direction: column; gap: var(--sl-spacing-lg); overflow: hidden;">
+          <!-- Search -->
+          <div class="modal-field">
+            <label class="modal-label">Search Ships</label>
+            <input type="text" id="searchInput" class="modal-input" placeholder="Search by name..." onkeyup="filterShipList()">
+          </div>
+
+          <!-- Filters -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sl-spacing-md);">
+            <div class="modal-field">
+              <label class="modal-label">Filter by Size</label>
+              <select id="sizeFilter" class="modal-select" onchange="filterShipList()">
+                <option value="">All Sizes</option>
+                <option value="1">Size 1</option>
+                <option value="2">Size 2</option>
+                <option value="3">Size 3</option>
+                <option value="4">Size 4</option>
+              </select>
+            </div>
+            <div class="modal-field">
+              <label class="modal-label">Filter by Role</label>
+              <select id="roleFilter" class="modal-select" onchange="filterShipList()">
+                <option value="">All Roles</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Ship List -->
+          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <label class="modal-label">Select a Ship</label>
+            <div class="ship-list" id="shipList" style="flex: 1; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Status, Notes, Button -->
+        <div id="selectedShipSection" style="display: none; flex-direction: column; gap: var(--sl-spacing-lg);">
+          <div style="padding-bottom: var(--sl-spacing-lg); border-bottom: 1px solid var(--sl-border-secondary);">
+            <h3 id="selectedShipName" class="modal-title" style="font-size: 16px; margin: 0;">Select a ship</h3>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Status</label>
+            <select id="statusSelect" class="modal-select">
+              <option value="Procured">Procured (purchased or obtained in-game)</option>
+              <option value="Pledged">Pledged (purchased with real money)</option>
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Notes (optional)</label>
+            <input type="text" id="notesInput" class="modal-input" placeholder="e.g., Modified loadout, In storage...">
+          </div>
+
+          <button class="btn-primary" id="confirmBtn" onclick="confirmAddToHangar()">Add to Hangar</button>
+          <button class="btn-accent" onclick="closeAddModal()">Cancel</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Ship Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title" id="editModalTitle">Edit Ship</h2>
+
+      <div class="modal-field">
+        <label class="modal-label">Status</label>
+        <select id="editStatusSelect" class="modal-select">
+          <option value="Procured">Procured (purchased or obtained in-game)</option>
+          <option value="Pledged">Pledged (purchased with real money)</option>
+        </select>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">Notes (optional)</label>
+        <input type="text" id="editNotesInput" class="modal-input" placeholder="e.g., Modified loadout, In storage...">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-accent" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmEditHangarEntry()">Update</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedShip = null;
+    let editingEntryId = null;
+    let availableRoles = new Set();
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadHangar();
+      loadAvailableRoles();
+      window.addEventListener('shipcomp-data-change', (e) => {
+        if (e.detail.key === 'ships' || e.detail.key === 'hangar') {
+          loadHangar();
+        }
+      });
+    });
+
+    // Load and display hangar entries
+    function loadHangar() {
+      const hangar = ShipCompStorage.getHangar();
+      const container = document.getElementById('hangarContainer');
+
+      if (hangar.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p class="text-secondary">Your hangar is empty.</p>
+            <p class="text-dim" style="font-size: 12px;">Click "ADD SHIPS TO HANGAR" to get started.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const headerHtml = `
+        <div class="hangar-list-header">
+          <div>Ship</div>
+          <div>Status</div>
+          <div>Acquired</div>
+          <div>Notes</div>
+          <div></div>
+        </div>
+      `;
+
+      const entriesHtml = hangar.map(entry => `
+        <div class="hangar-entry">
+          <div class="entry-ship-name">${entry.shipName}</div>
+          <div><span class="badge badge-${entry.status === 'Procured' ? 'success' : 'warning'}">${entry.status}</span></div>
+          <div class="entry-acquired">${entry.acquired}</div>
+          <div class="entry-notes" title="${entry.notes}">${entry.notes || '—'}</div>
+          <div class="entry-actions">
+            <button class="btn-accent" onclick="openEditModal(${entry.id}, '${entry.shipName}', '${entry.status}', '${entry.notes}')">Edit</button>
+            <button class="btn-danger" onclick="removeHangarEntry(${entry.id}, '${entry.shipName}')">Remove</button>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = headerHtml + entriesHtml;
+    }
+
+    // Load all available ships and populate role filter
+    function loadAvailableRoles() {
+      const ships = ShipCompStorage.getShips();
+      const available = ships.filter(s => s.production_status !== 'concept');
+
+      available.forEach(ship => {
+        if (ship.role) availableRoles.add(ship.role);
+      });
+
+      const roleSelect = document.getElementById('roleFilter');
+      Array.from(availableRoles).sort().forEach(role => {
+        const option = document.createElement('option');
+        option.value = role;
+        option.textContent = role;
+        roleSelect.appendChild(option);
+      });
+    }
+
+    // Filter and display ships in modal
+    function filterShipList() {
+      const ships = ShipCompStorage.getShips();
+      const available = ships.filter(s => s.production_status !== 'concept');
+
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const sizeFilter = document.getElementById('sizeFilter').value;
+      const roleFilter = document.getElementById('roleFilter').value;
+
+      const filtered = available.filter(ship => {
+        const matchesSearch = ship.name.toLowerCase().includes(search) ||
+                             ship.manufacturer.toLowerCase().includes(search);
+        const matchesSize = !sizeFilter || ship.size_class == sizeFilter;
+        const matchesRole = !roleFilter || ship.role === roleFilter;
+        return matchesSearch && matchesSize && matchesRole;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+
+      // De-duplicate by exact ship name (keep first occurrence)
+      const seenNames = new Set();
+      const deduped = filtered.filter(ship => {
+        if (seenNames.has(ship.name)) {
+          return false;
+        }
+        seenNames.add(ship.name);
+        return true;
+      });
+
+      const listHtml = deduped.map(ship => `
+        <div class="ship-list-item" onclick="selectShip(${ship.id}, '${ship.name}')">
+          <span class="ship-item-name">${ship.name}</span>
+          <span class="ship-item-specs">${ship.manufacturer} • Size ${ship.size_class}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('shipList').innerHTML = listHtml || '<div style="padding: var(--sl-spacing-lg); text-align: center; color: var(--sl-text-dim);">No ships found</div>';
+    }
+
+    // Select a ship from the list
+    function selectShip(shipId, shipName) {
+      selectedShip = { id: shipId, name: shipName };
+      document.getElementById('selectedShipSection').style.display = 'flex';
+      document.getElementById('selectedShipName').textContent = shipName;
+      document.getElementById('statusSelect').value = 'Procured';
+      document.getElementById('notesInput').value = '';
+
+      // Visual feedback
+      document.querySelectorAll('.ship-list-item').forEach(item => item.style.background = '');
+      event.currentTarget.style.background = 'var(--sl-bg-hover)';
+    }
+
+    // Open add modal
+    function openAddModal() {
+      selectedShip = null;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('sizeFilter').value = '';
+      document.getElementById('roleFilter').value = '';
+      document.getElementById('selectedShipSection').style.display = 'none';
+      document.getElementById('addModal').classList.add('active');
+
+      // Refresh role filter on modal open
+      refreshRoleFilter();
+
+      // Load and display full ship list
+      setTimeout(() => filterShipList(), 50);
+    }
+
+    // Refresh role filter dropdown
+    function refreshRoleFilter() {
+      const ships = ShipCompStorage.getShips();
+      const available = ships.filter(s => s.production_status !== 'concept');
+      const roles = new Set();
+
+      available.forEach(ship => {
+        if (ship.role) roles.add(ship.role);
+      });
+
+      const roleSelect = document.getElementById('roleFilter');
+      // Clear existing options except first
+      while (roleSelect.options.length > 1) {
+        roleSelect.remove(1);
+      }
+
+      // Add sorted roles
+      Array.from(roles).sort().forEach(role => {
+        const option = document.createElement('option');
+        option.value = role;
+        option.textContent = role;
+        roleSelect.appendChild(option);
+      });
+    }
+
+    // Close add modal
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('active');
+      selectedShip = null;
+    }
+
+    // Confirm add to hangar
+    function confirmAddToHangar() {
+      if (!selectedShip) return;
+      const status = document.getElementById('statusSelect').value;
+      const notes = document.getElementById('notesInput').value;
+      ShipCompStorage.addShipToHangar(selectedShip.id, selectedShip.name, status, notes);
+      loadHangar();
+
+      // Reset form for next ship (keep modal open)
+      selectedShip = null;
+      document.getElementById('selectedShipSection').style.display = 'none';
+      document.getElementById('statusSelect').value = 'Procured';
+      document.getElementById('notesInput').value = '';
+      document.querySelectorAll('.ship-list-item').forEach(item => item.style.background = '');
+    }
+
+    // Open edit modal
+    function openEditModal(entryId, shipName, status, notes) {
+      editingEntryId = entryId;
+      document.getElementById('editModalTitle').textContent = `Edit ${shipName}`;
+      document.getElementById('editStatusSelect').value = status;
+      document.getElementById('editNotesInput').value = notes;
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
+      editingEntryId = null;
+    }
+
+    // Confirm edit hangar entry
+    function confirmEditHangarEntry() {
+      if (!editingEntryId) return;
+      const status = document.getElementById('editStatusSelect').value;
+      const notes = document.getElementById('editNotesInput').value;
+      ShipCompStorage.updateHangarEntry(editingEntryId, status, notes);
+      closeEditModal();
+      loadHangar();
+    }
+
+    // Remove hangar entry
+    function removeHangarEntry(entryId, shipName) {
+      if (confirm(`Remove ${shipName} from hangar?`)) {
+        ShipCompStorage.removeHangarEntry(entryId);
+        loadHangar();
+      }
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('addModal')) closeAddModal();
+      if (e.target === document.getElementById('editModal')) closeEditModal();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Loadouts — Data Sync</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Exo+2:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shipcomp-styles.css">
+  <script src="shipcomp-utils.js"></script>
+
+  <style>
+    .sync-section {
+      margin-bottom: var(--sl-spacing-xl);
+    }
+
+    .sync-log {
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      padding: var(--sl-spacing-lg);
+      font-family: var(--sl-font-data);
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .sync-log-entry {
+      padding: var(--sl-spacing-sm) 0;
+      border-bottom: 1px solid var(--sl-border-dim);
+      color: var(--sl-text-secondary);
+    }
+
+    .sync-log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .sync-log-entry.success {
+      color: var(--sl-status-success);
+    }
+
+    .sync-log-entry.error {
+      color: var(--sl-status-alert);
+    }
+
+    .sync-log-entry.info {
+      color: var(--sl-accent-primary);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius);
+      overflow: hidden;
+      margin: var(--sl-spacing-md) 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--sl-accent-primary), var(--sl-accent-secondary));
+      width: 0%;
+      transition: width 200ms ease-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--sl-text-inverse);
+    }
+
+    .stat-row {
+      display: flex;
+      gap: var(--sl-spacing-lg);
+      margin: var(--sl-spacing-md) 0;
+    }
+
+    .stat-item {
+      flex: 1;
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      padding: var(--sl-spacing-md);
+      text-align: center;
+    }
+
+    .stat-item-label {
+      font-family: var(--sl-font-data);
+      font-size: 10px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--sl-spacing-xs);
+    }
+
+    .stat-item-value {
+      font-family: var(--sl-font-data);
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--sl-accent-primary);
+    }
+
+    .button-group {
+      display: flex;
+      gap: var(--sl-spacing-md);
+      flex-wrap: wrap;
+    }
+
+    .button-group button {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .sync-status {
+      padding: var(--sl-spacing-lg);
+      border-radius: var(--sl-border-radius-lg);
+      margin: var(--sl-spacing-lg) 0;
+      font-family: var(--sl-font-data);
+      font-size: 13px;
+    }
+
+    .sync-status.idle {
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      color: var(--sl-text-secondary);
+    }
+
+    .sync-status.syncing {
+      background: rgba(0, 217, 255, 0.1);
+      border: 1px solid var(--sl-accent-primary);
+      color: var(--sl-accent-primary);
+    }
+
+    .sync-status.success {
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid var(--sl-status-success);
+      color: var(--sl-status-success);
+    }
+
+    .sync-status.error {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid var(--sl-status-alert);
+      color: var(--sl-status-alert);
+    }
+
+    .sync-history {
+      background: var(--sl-bg-panel);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      padding: var(--sl-spacing-lg);
+    }
+
+    .sync-history-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--sl-spacing-md) 0;
+      border-bottom: 1px solid var(--sl-border-dim);
+      font-size: 13px;
+    }
+
+    .sync-history-entry:last-child {
+      border-bottom: none;
+    }
+
+    .sync-history-date {
+      color: var(--sl-text-secondary);
+      font-family: var(--sl-font-data);
+      min-width: 180px;
+    }
+
+    .sync-history-details {
+      display: flex;
+      gap: var(--sl-spacing-lg);
+      color: var(--sl-text-dim);
+      font-family: var(--sl-font-data);
+      flex: 1;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="module-header">
+      <p class="module-eyebrow">System Maintenance</p>
+      <h1 class="module-title">Data Sync</h1>
+    </div>
+
+    <!-- Status Display -->
+    <div id="statusDisplay" class="sync-status idle">
+      <p id="statusText" style="margin: 0;">Ready to sync. Click the button below to pull the latest ship and component data from Star Citizen Wiki API.</p>
+    </div>
+
+    <!-- Progress Bar (hidden until sync starts) -->
+    <div id="progressContainer" style="display: none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+      </div>
+    </div>
+
+    <!-- Current Data Stats -->
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="stat-item-label">Ships Loaded</div>
+        <div class="stat-item-value" id="shipsCount">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Components Loaded</div>
+        <div class="stat-item-value" id="componentsCount">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Last Sync</div>
+        <div class="stat-item-value" id="lastSyncTime" style="font-size: 12px; color: var(--sl-text-secondary);">—</div>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="button-group" style="margin: var(--sl-spacing-xl) 0;">
+      <button id="syncButton" class="btn-primary" onclick="startSync()">⚡ Start Sync</button>
+      <button id="clearButton" class="btn-danger" onclick="clearData()">Clear All Data</button>
+    </div>
+
+    <!-- Sync Log -->
+    <div class="sync-section">
+      <h3 style="margin-bottom: var(--sl-spacing-md);">Sync Log</h3>
+      <div class="sync-log" id="syncLog">
+        <div class="sync-log-entry info">Ready.</div>
+      </div>
+    </div>
+
+    <!-- Sync History -->
+    <div class="sync-section">
+      <h3 style="margin-bottom: var(--sl-spacing-md);">Sync History</h3>
+      <div class="sync-history" id="syncHistoryContainer">
+        <p class="text-dim" style="text-align: center; margin: var(--sl-spacing-lg) 0;">No syncs recorded yet.</p>
+      </div>
+    </div>
+
+    <!-- API Info -->
+    <div class="panel" style="margin-top: var(--sl-spacing-xl);">
+      <h3>About Data Sync</h3>
+      <p class="text-secondary">
+        This sync pulls reference data from the <strong>Star Citizen Wiki API</strong>:
+      </p>
+      <ul style="color: var(--sl-text-secondary); margin: var(--sl-spacing-md) 0 0 var(--sl-spacing-lg);">
+        <li>~400 ships with their stock loadouts and component slots</li>
+        <li>~2,000 trackable components (coolers, shields, power plants, etc.)</li>
+        <li>All data is cached locally in your browser</li>
+        <li>Re-sync when new game patches arrive</li>
+      </ul>
+      <p class="text-dim" style="margin-top: var(--sl-spacing-md); font-size: 12px;">
+        No authentication required. CORS-friendly. Data updates automatically when Star Citizen patches drop.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateStats();
+      loadSyncHistory();
+    });
+
+    // Update stats display
+    function updateStats() {
+      const ships = ShipCompStorage.getShips();
+      const components = ShipCompStorage.getComponents();
+      const syncMeta = ShipCompStorage.getSyncMeta();
+
+      document.getElementById('shipsCount').textContent = ships.length.toLocaleString();
+      document.getElementById('componentsCount').textContent = components.length.toLocaleString();
+
+      if (syncMeta.date) {
+        const date = new Date(syncMeta.date);
+        const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        document.getElementById('lastSyncTime').textContent = formatted;
+      }
+    }
+
+    // Log a message to the sync log
+    function logMessage(message, type = 'info') {
+      const log = document.getElementById('syncLog');
+      const entry = document.createElement('div');
+      entry.className = `sync-log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Update progress bar
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100);
+      const fill = document.getElementById('progressFill');
+      fill.style.width = percent + '%';
+      fill.textContent = percent + '%';
+    }
+
+    // Set status display
+    function setStatus(statusClass, message) {
+      const display = document.getElementById('statusDisplay');
+      const text = document.getElementById('statusText');
+      display.className = `sync-status ${statusClass}`;
+      text.textContent = message;
+    }
+
+    // Start the sync process
+    async function startSync() {
+      const button = document.getElementById('syncButton');
+      const clearButton = document.getElementById('clearButton');
+      
+      button.disabled = true;
+      clearButton.disabled = true;
+      
+      document.getElementById('syncLog').innerHTML = '';
+      document.getElementById('progressContainer').style.display = 'block';
+      
+      setStatus('syncing', 'Syncing data from Star Citizen Wiki API...');
+      logMessage('Starting sync...', 'info');
+
+      try {
+        const componentTypes = WikiAPI.TRACKABLE_TYPES;
+        const totalSteps = 1 + componentTypes.length;
+        let currentStep = 0;
+
+        logMessage('Fetching ships...', 'info');
+        const ships = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const batch = await WikiAPI.getAllShips(page, 50);
+          if (batch.length === 0) {
+            hasMore = false;
+          } else {
+            ships.push(...batch);
+            logMessage(`Loaded ${ships.length} ships so far...`, 'info');
+            page++;
+          }
+        }
+
+        currentStep++;
+        updateProgress(currentStep, totalSteps);
+
+        const normalizedShips = ships.map(ship => DataHelpers.normalizeShip(ship));
+        ShipCompStorage.setShips(normalizedShips);
+        logMessage(`✓ Loaded ${normalizedShips.length} ships`, 'success');
+
+        logMessage('Fetching components...', 'info');
+        const allComponents = [];
+
+        for (const type of componentTypes) {
+          const components = await WikiAPI.getComponentsByType(type);
+          const normalized = components.map(c => DataHelpers.normalizeComponent(c));
+          allComponents.push(...normalized);
+          logMessage(`Loaded ${normalized.length} ${type}s`, 'info');
+          
+          currentStep++;
+          updateProgress(currentStep, totalSteps);
+        }
+
+        ShipCompStorage.setComponents(allComponents);
+        logMessage(`✓ Loaded ${allComponents.length} components total`, 'success');
+
+        const gameVersion = normalizedShips[0]?.version || 'Unknown';
+        ShipCompStorage.setSyncMeta(gameVersion, normalizedShips.length + allComponents.length);
+
+        logMessage('Sync complete!', 'success');
+        setStatus('success', `✓ Sync successful! ${normalizedShips.length} ships and ${allComponents.length} components loaded.`);
+
+        updateProgress(totalSteps, totalSteps);
+        updateStats();
+        loadSyncHistory();
+
+      } catch (error) {
+        console.error('Sync error:', error);
+        logMessage(`✗ Error: ${error.message}`, 'error');
+        setStatus('error', `Sync failed: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        clearButton.disabled = false;
+        setTimeout(() => {
+          document.getElementById('progressContainer').style.display = 'none';
+        }, 2000);
+      }
+    }
+
+    // Clear all data
+    function clearData() {
+      if (confirm('Are you sure? This will clear all data including ships, components, hangar, and loadouts.')) {
+        ShipCompStorage.clear();
+        logMessage('All data cleared.', 'info');
+        setStatus('idle', 'All data has been cleared. Run Data Sync to restore reference data.');
+        updateStats();
+        loadSyncHistory();
+      }
+    }
+
+    // Load and display sync history
+    function loadSyncHistory() {
+      const syncLog = JSON.parse(localStorage.getItem('shipcomp-sync-log') || '[]');
+      const container = document.getElementById('syncHistoryContainer');
+
+      if (syncLog.length === 0) {
+        container.innerHTML = '<p class="text-dim" style="text-align: center; margin: var(--sl-spacing-lg) 0;">No syncs recorded yet.</p>';
+        return;
+      }
+
+      let html = '';
+      syncLog.forEach((entry, index) => {
+        const date = new Date(entry.date);
+        const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        html += `
+          <div class="sync-history-entry">
+            <div class="sync-history-date">${formatted}</div>
+            <div class="sync-history-details">
+              <span>${entry.gameVersion}</span>
+              <span>${entry.count} items</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    window.addEventListener('storage', () => {
+      updateStats();
+      loadSyncHistory();
+    });
+  </script>
+</body>
+</html>
