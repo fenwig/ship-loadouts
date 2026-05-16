@@ -159,7 +159,14 @@
         return;
       }
 
-      loadShipLoadout();
+      // Wait for ShipCompStorage to be available
+      if (typeof ShipCompStorage === 'undefined') {
+        setTimeout(() => {
+          loadShipLoadout();
+        }, 100);
+      } else {
+        loadShipLoadout();
+      }
       window.addEventListener('shipcomp-data-change', (e) => {
         if (e.detail.key === 'loadouts' || e.detail.key === 'crafted-items') {
           loadShipLoadout();
