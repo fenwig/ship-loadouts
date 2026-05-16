@@ -285,17 +285,16 @@ const WikiAPI = {
 
   // Component types to fetch (from app design doc)
   TRACKABLE_TYPES: [
-    'Shield',
     'PowerPlant',
     'QuantumDrive',
     'Cooler',
     'Radar',
-    'WeaponMining',
+    'Shield',
     'TractorBeam',
-    'TowingBeam',
-    'WeaponGun',
-    'Refuel',
-    'Salvage'
+    'MiningLaser',
+    'Refuelling',
+    'ShipWeapon',
+    'SalvageModifier'
   ]
 };
 
@@ -310,8 +309,8 @@ const DataHelpers = {
     if (!ship.hardpoints) return stock;
 
     ship.hardpoints.forEach(hardpoint => {
-      // Skip non-trackable types
-      if (!hardpoint.item || hardpoint.type === 'Seat' || hardpoint.type === 'Paint') {
+      // Only include trackable component types
+      if (!hardpoint.item || !this.TRACKABLE_TYPES.includes(hardpoint.type)) {
         return;
       }
 
