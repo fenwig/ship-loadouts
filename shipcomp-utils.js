@@ -287,13 +287,12 @@ const WikiAPI = {
   TRACKABLE_TYPES: [
     'PowerPlant',
     'QuantumDrive',
+    'Shield',
     'Cooler',
     'Radar',
-    'Shield',
     'TractorBeam',
     'MiningLaser',
     'Refuelling',
-    'ShipWeapon',
     'SalvageModifier'
   ]
 };

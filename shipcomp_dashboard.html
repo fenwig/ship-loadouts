@@ -292,6 +292,8 @@
 
           const frame = document.getElementById('loadouts-frame');
           if (frame) {
+            // Force reload by resetting src
+            frame.src = 'shipcomp_loadouts.html';
             frame.classList.add('active');
           }
         }
