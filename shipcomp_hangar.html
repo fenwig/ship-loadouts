@@ -27,7 +27,7 @@
 
     .hangar-list-header {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 100px;
+      grid-template-columns: 1fr 80px 1fr 1fr 1fr 120px;
       gap: var(--sl-spacing-lg);
       padding: var(--sl-spacing-lg);
       background: var(--sl-bg-panel);
@@ -42,7 +42,7 @@
 
     .hangar-entry {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 100px;
+      grid-template-columns: 1fr 80px 1fr 1fr 1fr 120px;
       gap: var(--sl-spacing-lg);
       align-items: center;
       padding: var(--sl-spacing-lg);
@@ -385,6 +385,7 @@
       const headerHtml = `
         <div class="hangar-list-header">
           <div>Ship</div>
+          <div></div>
           <div>Status</div>
           <div>Acquired</div>
           <div>Notes</div>
@@ -395,6 +396,7 @@
       const entriesHtml = hangar.map(entry => `
         <div class="hangar-entry">
           <div class="entry-ship-name">${entry.shipName}</div>
+          <div><button class="btn-primary" onclick="goToLoadouts(${entry.shipId})" style="width: 100%; padding: var(--sl-spacing-sm) var(--sl-spacing-md); font-size: 11px;">Loadout</button></div>
           <div><span class="badge badge-${entry.status === 'Procured' ? 'success' : 'warning'}">${entry.status}</span></div>
           <div class="entry-acquired">${entry.acquired}</div>
           <div class="entry-notes" title="${entry.notes}">${entry.notes || '—'}</div>
@@ -577,6 +579,15 @@
       if (e.target === document.getElementById('addModal')) closeAddModal();
       if (e.target === document.getElementById('editModal')) closeEditModal();
     });
+
+    // Go to loadouts page for a specific ship
+    function goToLoadouts(shipId) {
+      localStorage.setItem('shipcomp-loadouts-shipId', shipId);
+      window.parent.postMessage({
+        type: 'shipcomp-navigate',
+        src: 'shipcomp_loadouts.html'
+      }, '*');
+    }
   </script>
 </body>
 </html>

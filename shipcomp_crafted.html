@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Loadouts — Crafted Items</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Exo+2:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shipcomp-styles.css">
+  <script src="shipcomp-utils.js"></script>
+
+  <style>
+    .crafted-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sl-spacing-xl);
+      flex-wrap: wrap;
+      gap: var(--sl-spacing-lg);
+    }
+
+    .crafted-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sl-spacing-lg);
+    }
+
+    .crafted-card {
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      overflow: hidden;
+    }
+
+    .crafted-card-header {
+      padding: var(--sl-spacing-lg);
+      background: var(--sl-bg-panel);
+      cursor: pointer;
+      transition: all var(--sl-transition-fast);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .crafted-card-header:hover {
+      background: var(--sl-bg-hover);
+      border-color: var(--sl-accent-primary);
+    }
+
+    .crafted-card-title {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sl-spacing-sm);
+    }
+
+    .crafted-card-name {
+      font-family: var(--sl-font-body);
+      font-size: 22px;
+      color: var(--sl-text-primary);
+      font-weight: 600;
+    }
+
+    .crafted-card-installed {
+      font-family: var(--sl-font-data);
+      font-size: 12px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .crafted-card-specs {
+      font-family: var(--sl-font-data);
+      font-size: 14px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .crafted-toggle {
+      font-family: var(--sl-font-data);
+      color: var(--sl-text-secondary);
+      font-size: 14px;
+      min-width: 30px;
+      text-align: center;
+    }
+
+    .crafted-card-body {
+      display: none;
+      padding: var(--sl-spacing-lg);
+      border-top: 1px solid var(--sl-border-secondary);
+      background: var(--sl-bg-card);
+    }
+
+    .crafted-card-body.open {
+      display: block;
+    }
+
+    .effects-table {
+      width: 100%;
+      font-family: var(--sl-font-data);
+      font-size: 15px;
+      margin-bottom: var(--sl-spacing-lg);
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: var(--sl-spacing-lg);
+    }
+
+    .effects-row {
+      display: contents;
+    }
+
+    .effects-label {
+      color: var(--sl-text-secondary);
+      font-weight: 500;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--sl-border-dim);
+    }
+
+    .effects-value {
+      color: var(--sl-accent-primary);
+      text-align: left;
+      font-weight: 700;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--sl-border-dim);
+    }
+
+    .effects-label:last-of-type,
+    .effects-value:last-of-type {
+      border-bottom: none;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: var(--sl-spacing-md);
+      margin-top: var(--sl-spacing-lg);
+      border-top: 1px solid var(--sl-border-dim);
+      padding-top: var(--sl-spacing-lg);
+    }
+
+    .card-actions button {
+      flex: 1;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-lg);
+      font-size: 12px;
+    }
+
+    .btn-danger:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--sl-spacing-xl);
+      color: var(--sl-text-secondary);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--sl-bg-panel);
+      border: 1px solid var(--sl-accent-primary);
+      border-radius: var(--sl-border-radius-lg);
+      padding: var(--sl-spacing-xl);
+      max-width: 1000px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 217, 255, 0.2);
+    }
+
+    .modal-title {
+      font-family: var(--sl-font-title);
+      font-size: 18px;
+      color: var(--sl-text-primary);
+      margin: 0 0 var(--sl-spacing-lg) 0;
+    }
+
+    .modal-field {
+      margin-bottom: var(--sl-spacing-md);
+    }
+
+    .modal-label {
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--sl-spacing-sm);
+      display: block;
+    }
+
+    .modal-input,
+    .modal-select {
+      width: 100%;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      color: var(--sl-text-primary);
+      font-family: var(--sl-font-body);
+      font-size: 14px;
+      border-radius: var(--sl-border-radius);
+      box-sizing: border-box;
+    }
+
+    .modal-input:focus,
+    .modal-select:focus {
+      outline: none;
+      border-color: var(--sl-accent-primary);
+      box-shadow: 0 0 0 2px rgba(240, 160, 64, 0.1);
+    }
+
+    .component-list {
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius);
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--sl-bg-card);
+    }
+
+    .component-item {
+      padding: var(--sl-spacing-md);
+      border-bottom: 1px solid var(--sl-border-dim);
+      cursor: pointer;
+      transition: all var(--sl-transition-fast);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .component-item:hover {
+      background: var(--sl-bg-hover);
+      border-color: var(--sl-accent-primary);
+    }
+
+    .component-item:last-child {
+      border-bottom: none;
+    }
+
+    .component-item-name {
+      font-family: var(--sl-font-body);
+      color: var(--sl-text-primary);
+      flex-grow: 1;
+    }
+
+    .component-item-specs {
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      margin-left: var(--sl-spacing-md);
+      text-align: right;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: var(--sl-spacing-md);
+      margin-top: var(--sl-spacing-xl);
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-lg);
+    }
+
+    .modal-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: var(--sl-spacing-xl);
+      height: 500px;
+      overflow: hidden;
+    }
+
+    .modal-left {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sl-spacing-lg);
+      overflow: hidden;
+    }
+
+    .modal-right {
+      display: none;
+      flex-direction: column;
+      gap: var(--sl-spacing-lg);
+    }
+
+    .modal-right.active {
+      display: flex;
+    }
+
+    .selected-component-info {
+      padding-bottom: var(--sl-spacing-lg);
+      border-bottom: 1px solid var(--sl-border-secondary);
+    }
+
+    .selected-component-name {
+      font-family: var(--sl-font-body);
+      font-size: 16px;
+      color: var(--sl-text-primary);
+      font-weight: 500;
+      margin-bottom: var(--sl-spacing-md);
+    }
+
+    .selected-component-specs {
+      font-family: var(--sl-font-data);
+      font-size: 12px;
+      color: var(--sl-text-secondary);
+      line-height: 1.6;
+    }
+
+    .quality-inputs {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--sl-spacing-md);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="module-header">
+      <p class="module-eyebrow">Component Management</p>
+      <h1 class="module-title">Crafted Items</h1>
+    </div>
+
+    <!-- Header with Buttons -->
+    <div class="crafted-header">
+      <button class="btn-primary" onclick="openCreateModal()">+ CREATE COMPONENT</button>
+      <button class="btn-primary" onclick="triggerFileInput()">+ IMPORT FROM FORGEWORKS</button>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)">
+
+    <!-- Crafted Items List -->
+    <div id="craftedContainer" class="crafted-list">
+      <div class="empty-state">
+        <p class="text-secondary">No crafted items imported yet.</p>
+        <p class="text-dim" style="font-size: 12px;">Click "IMPORT FROM FORGEWORKS" to add crafted items from your Forgeworks export.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Component Modal -->
+  <div id="createModal" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title">Create Crafted Component</h2>
+
+      <div class="modal-layout">
+        <!-- LEFT: Component Search & Selection -->
+        <div class="modal-left">
+          <div class="modal-field">
+            <label class="modal-label">Search Components</label>
+            <input type="text" id="componentSearch" class="modal-input" placeholder="Search by name..." onkeyup="filterComponentList()">
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Filter by Type</label>
+            <select id="componentTypeFilter" class="modal-select" onchange="filterComponentList()">
+              <option value="">All Types</option>
+            </select>
+          </div>
+
+          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <label class="modal-label">Select Component</label>
+            <div class="component-list" id="componentList" style="flex: 1; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Quality Inputs -->
+        <div class="modal-right" id="qualitySection">
+          <div class="selected-component-info">
+            <div class="selected-component-name" id="selectedCompName">Select a component</div>
+            <div class="selected-component-specs" id="selectedCompSpecs"></div>
+          </div>
+
+          <div style="flex: 1; overflow-y: auto;">
+            <div class="modal-field">
+              <label class="modal-label">Quality 1 (Ingredient 1)</label>
+              <input type="number" id="quality1" class="modal-input" min="1" max="1000" placeholder="1-1000">
+            </div>
+
+            <div class="modal-field">
+              <label class="modal-label">Quality 2 (Ingredient 2)</label>
+              <input type="number" id="quality2" class="modal-input" min="1" max="1000" placeholder="1-1000">
+            </div>
+
+            <div class="modal-field">
+              <label class="modal-label">Quality 3 (Ingredient 3)</label>
+              <input type="number" id="quality3" class="modal-input" min="1" max="1000" placeholder="1-1000">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-accent" onclick="closeCreateModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmCreateCrafted()" id="createConfirmBtn" style="display: none;">Create Component</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCraftedItems();
+      window.addEventListener('shipcomp-data-change', (e) => {
+        if (e.detail.key === 'crafted-items') {
+          loadCraftedItems();
+        }
+      });
+    });
+
+    // Load and display crafted items
+    function loadCraftedItems() {
+      const items = ShipCompStorage.getCraftedItems();
+      const container = document.getElementById('craftedContainer');
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p class="text-secondary">No crafted items imported yet.</p>
+            <p class="text-dim" style="font-size: 12px;">Click "IMPORT FROM FORGEWORKS" to add crafted items.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const cardsHtml = items.map(item => {
+        const effectLabels = DataHelpers.getEffectLabels(item.type);
+        const effectsHtml = effectLabels.map((label, idx) => {
+          const quality = item.qualities[idx] || 'N/A';
+          return `
+            <div class="effects-label">${label}</div>
+            <div class="effects-value">${quality}</div>
+          `;
+        }).join('');
+
+        const classStr = item.class ? `${item.class} ` : '';
+        const installedShip = findInstalledShip(item.id);
+        const isInstalled = installedShip !== null;
+        const installedText = isInstalled ? `INSTALLED ON: ${installedShip}` : '';
+
+        return `
+          <div class="crafted-card">
+            <div class="crafted-card-header" onclick="toggleCard(this)">
+              <div class="crafted-card-title">
+                <div class="crafted-card-name">${item.name} [CRAFTED]</div>
+                <div class="crafted-card-specs">${item.type} • Size ${item.size} • ${classStr}${item.grade}</div>
+                ${installedText ? `<div class="crafted-card-installed">${installedText}</div>` : ''}
+              </div>
+              <div class="crafted-toggle">▼</div>
+            </div>
+            <div class="crafted-card-body">
+              <div class="effects-table">
+                ${effectsHtml}
+              </div>
+              <div class="card-actions">
+                <button class="btn-danger" onclick="removeCraftedItem(${item.id}, '${item.name}')" ${isInstalled ? 'disabled' : ''}>Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = cardsHtml;
+    }
+
+    // Toggle card expansion
+    function toggleCard(header) {
+      const body = header.nextElementSibling;
+      body.classList.toggle('open');
+      const toggle = header.querySelector('.crafted-toggle');
+      toggle.textContent = body.classList.contains('open') ? '▲' : '▼';
+    }
+
+    // Trigger file input click
+    function triggerFileInput() {
+      document.getElementById('fileInput').click();
+    }
+
+    // Handle file upload
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+
+          // Handle single item or array
+          const items = Array.isArray(data) ? data : [data];
+
+          // Validate and import each item
+          let imported = 0;
+          items.forEach(item => {
+            if (validateCraftedItem(item)) {
+              ShipCompStorage.addCraftedItem(item);
+              imported++;
+            }
+          });
+
+          if (imported > 0) {
+            alert(`Successfully imported ${imported} crafted item(s).`);
+          } else {
+            alert('No valid crafted items found in the file.');
+          }
+
+          // Reset file input
+          event.target.value = '';
+        } catch (error) {
+          console.error('Failed to parse JSON:', error);
+          alert('Invalid JSON file. Please check the format and try again.');
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Validate crafted item structure
+    function validateCraftedItem(item) {
+      return item.name && item.type && item.size !== undefined &&
+             item.grade && Array.isArray(item.ingredientQualities) &&
+             item.ingredientQualities.length === 3;
+    }
+
+    // Find which ship a crafted item is installed on
+    function findInstalledShip(craftedItemId) {
+      const loadouts = ShipCompStorage.getLoadouts();
+      const ships = ShipCompStorage.getShips();
+      const hangar = ShipCompStorage.getHangar();
+
+      for (const shipId in loadouts) {
+        const shipLoadout = loadouts[shipId];
+        for (const slotId in shipLoadout) {
+          const slot = shipLoadout[slotId];
+          if (slot.current === `crafted:${craftedItemId}` || slot.target === `crafted:${craftedItemId}`) {
+            const hangarEntry = hangar.find(h => h.shipId == shipId);
+            return hangarEntry ? hangarEntry.shipName : 'Unknown Ship';
+          }
+        }
+      }
+      return null;
+    }
+
+    // Remove crafted item
+    function removeCraftedItem(itemId, itemName) {
+      const installedShip = findInstalledShip(itemId);
+      if (installedShip) {
+        alert(`Cannot delete "${itemName}" because it is installed on ${installedShip}.`);
+        return;
+      }
+
+      if (confirm(`Delete "${itemName}" from crafted items?`)) {
+        ShipCompStorage.removeCraftedItem(itemId);
+        loadCraftedItems();
+      }
+    }
+
+    // CREATE COMPONENT MODAL FUNCTIONS
+    let selectedComponent = null;
+
+    // Open create modal
+    function openCreateModal() {
+      selectedComponent = null;
+      document.getElementById('componentSearch').value = '';
+      document.getElementById('componentTypeFilter').value = '';
+      document.getElementById('quality1').value = '';
+      document.getElementById('quality2').value = '';
+      document.getElementById('quality3').value = '';
+      document.getElementById('qualitySection').classList.remove('active');
+      document.getElementById('createConfirmBtn').style.display = 'none';
+      document.getElementById('createModal').classList.add('active');
+
+      // Populate type filter
+      populateTypeFilter();
+
+      // Load and display component list
+      setTimeout(() => filterComponentList(), 50);
+    }
+
+    // Close create modal
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.remove('active');
+      selectedComponent = null;
+    }
+
+    // Populate type filter dropdown
+    function populateTypeFilter() {
+      const components = ShipCompStorage.getComponents();
+      const types = new Set();
+
+      components.forEach(comp => {
+        if (comp.type) types.add(comp.type);
+      });
+
+      const typeSelect = document.getElementById('componentTypeFilter');
+      // Clear existing options except first
+      while (typeSelect.options.length > 1) {
+        typeSelect.remove(1);
+      }
+
+      // Add sorted types
+      Array.from(types).sort().forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        typeSelect.appendChild(option);
+      });
+    }
+
+    // Filter component list
+    function filterComponentList() {
+      const components = ShipCompStorage.getComponents();
+      const search = document.getElementById('componentSearch').value.toLowerCase();
+      const typeFilter = document.getElementById('componentTypeFilter').value;
+
+      const filtered = components.filter(comp => {
+        const matchesSearch = comp.name.toLowerCase().includes(search) ||
+                             comp.manufacturer.toLowerCase().includes(search);
+        const matchesType = !typeFilter || comp.type === typeFilter;
+        return matchesSearch && matchesType;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+
+      // De-duplicate by name
+      const seen = new Set();
+      const deduped = filtered.filter(comp => {
+        const key = `${comp.name}-${comp.size}-${comp.grade}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      const listHtml = deduped.map(comp => `
+        <div class="component-item" onclick="selectComponent({id: '${comp.uuid}', name: '${comp.name}', type: '${comp.type}', size: ${comp.size}, class: '${comp.class}', grade: '${comp.grade}', manufacturer: '${comp.manufacturer}'})">
+          <span class="component-item-name">${comp.name}</span>
+          <span class="component-item-specs">${comp.type} • Size ${comp.size} • ${comp.class} ${comp.grade}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('componentList').innerHTML = listHtml || '<div style="padding: var(--sl-spacing-lg); text-align: center; color: var(--sl-text-dim);">No components found</div>';
+    }
+
+    // Select a component
+    function selectComponent(comp) {
+      selectedComponent = comp;
+      document.getElementById('selectedCompName').textContent = comp.name;
+      document.getElementById('selectedCompSpecs').innerHTML = `
+        <strong>Type:</strong> ${comp.type}<br>
+        <strong>Size:</strong> ${comp.size}<br>
+        <strong>Class:</strong> ${comp.class}<br>
+        <strong>Grade:</strong> ${comp.grade}<br>
+        <strong>Manufacturer:</strong> ${comp.manufacturer}
+      `;
+      document.getElementById('qualitySection').classList.add('active');
+      document.getElementById('createConfirmBtn').style.display = 'block';
+
+      // Visual feedback
+      document.querySelectorAll('.component-item').forEach(item => item.style.background = '');
+      event.currentTarget.style.background = 'var(--sl-bg-hover)';
+    }
+
+    // Confirm create crafted item
+    function confirmCreateCrafted() {
+      if (!selectedComponent) return;
+
+      const q1 = parseInt(document.getElementById('quality1').value);
+      const q2 = parseInt(document.getElementById('quality2').value);
+      const q3 = parseInt(document.getElementById('quality3').value);
+
+      if (!q1 || !q2 || !q3 || q1 < 1 || q1 > 1000 || q2 < 1 || q2 > 1000 || q3 < 1 || q3 > 1000) {
+        alert('Please enter valid quality values (1-1000) for all three ingredients.');
+        return;
+      }
+
+      const craftedItem = {
+        name: selectedComponent.name,
+        type: selectedComponent.type,
+        size: selectedComponent.size,
+        class: selectedComponent.class,
+        grade: selectedComponent.grade,
+        ingredientQualities: [q1, q2, q3]
+      };
+
+      ShipCompStorage.addCraftedItem(craftedItem);
+      alert(`Created crafted component: ${selectedComponent.name}`);
+      closeCreateModal();
+      loadCraftedItems();
+    }
+  </script>
+</body>
+</html>

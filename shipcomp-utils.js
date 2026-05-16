@@ -22,11 +22,8 @@ const ShipCompStorage = {
     if (!localStorage.getItem('shipcomp-loadouts')) {
       localStorage.setItem('shipcomp-loadouts', JSON.stringify({}));
     }
-    if (!localStorage.getItem('shipcomp-inventory')) {
-      localStorage.setItem('shipcomp-inventory', JSON.stringify([]));
-    }
-    if (!localStorage.getItem('shipcomp-crafted-imports')) {
-      localStorage.setItem('shipcomp-crafted-imports', JSON.stringify([]));
+    if (!localStorage.getItem('shipcomp-crafted-items')) {
+      localStorage.setItem('shipcomp-crafted-items', JSON.stringify([]));
     }
     if (!localStorage.getItem('shipcomp-sync-meta')) {
       localStorage.setItem('shipcomp-sync-meta', JSON.stringify({}));
@@ -145,50 +142,36 @@ const ShipCompStorage = {
     return loadouts[shipId][slotId];
   },
 
-  // Get inventory (uninstalled components)
-  getInventory() {
-    return JSON.parse(localStorage.getItem('shipcomp-inventory') || '[]');
+  // Get crafted items
+  getCraftedItems() {
+    return JSON.parse(localStorage.getItem('shipcomp-crafted-items') || '[]');
   },
 
-  // Add item to inventory
-  addInventoryItem(componentUuid, source = 'purchased', quantity = 1, notes = '') {
-    const inventory = this.getInventory();
+  // Add crafted item (from import)
+  addCraftedItem(craftedItem) {
+    const items = this.getCraftedItems();
     const item = {
-      id: Date.now(), // Simple timestamp ID
-      component_uuid: componentUuid,
-      source: source, // 'stock_removed', 'purchased', 'crafted_import', 'manual'
-      crafted_item_id: null,
-      quantity: quantity,
-      acquired_date: new Date().toISOString().split('T')[0],
-      notes: notes,
-      custom_stats: null
+      id: Date.now(),
+      name: craftedItem.name,
+      type: craftedItem.type,
+      size: craftedItem.size,
+      class: craftedItem.class,
+      grade: craftedItem.grade,
+      qualities: craftedItem.ingredientQualities,
+      imported_date: new Date().toISOString().split('T')[0]
     };
-    inventory.push(item);
-    localStorage.setItem('shipcomp-inventory', JSON.stringify(inventory));
-    this.dispatchChange('inventory');
+    items.push(item);
+    localStorage.setItem('shipcomp-crafted-items', JSON.stringify(items));
+    this.dispatchChange('crafted-items');
     return item;
   },
 
-  // Remove item from inventory
-  removeInventoryItem(itemId) {
-    const inventory = this.getInventory();
-    const filtered = inventory.filter(item => item.id !== itemId);
-    localStorage.setItem('shipcomp-inventory', JSON.stringify(filtered));
-    this.dispatchChange('inventory');
-  },
-
-  // Get crafted imports (from Forgeworks)
-  getCraftedImports() {
-    return JSON.parse(localStorage.getItem('shipcomp-crafted-imports') || '[]');
-  },
-
-  // Add crafted import
-  addCraftedImport(craftedItem) {
-    const imports = this.getCraftedImports();
-    imports.push(craftedItem);
-    localStorage.setItem('shipcomp-crafted-imports', JSON.stringify(imports));
-    this.dispatchChange('crafted-imports');
-    return craftedItem;
+  // Remove crafted item
+  removeCraftedItem(itemId) {
+    const items = this.getCraftedItems();
+    const filtered = items.filter(item => item.id !== itemId);
+    localStorage.setItem('shipcomp-crafted-items', JSON.stringify(filtered));
+    this.dispatchChange('crafted-items');
   },
 
   // Get sync metadata
@@ -233,8 +216,7 @@ const ShipCompStorage = {
     localStorage.removeItem('shipcomp-components');
     localStorage.removeItem('shipcomp-hangar');
     localStorage.removeItem('shipcomp-loadouts');
-    localStorage.removeItem('shipcomp-inventory');
-    localStorage.removeItem('shipcomp-crafted-imports');
+    localStorage.removeItem('shipcomp-crafted-items');
     localStorage.removeItem('shipcomp-sync-meta');
     localStorage.removeItem('shipcomp-sync-log');
     this.init();
@@ -422,6 +404,34 @@ const DataHelpers = {
     }
 
     return Object.values(needed);
+  },
+
+  // Get effect labels for a component type
+  getEffectLabels(type) {
+    const effectMap = {
+      'PowerPlant': ['Integrity', 'Power Pips', 'Power Pips'],
+      'Shield': ['Integrity', 'Max Shield Strength', 'Max Shield Strength'],
+      'QuantumDrive': ['Integrity', 'Quantum Speed', 'Quantum Fuel Burn'],
+      'Cooler': ['Integrity', 'Coolant Rating', 'Coolant Rating'],
+      'Radar': ['Integrity', 'Min. Assist Distance', 'Max Assistance Distance'],
+      'MiningLaser': ['Integrity', 'Laser Power', 'Laser Power'],
+      'Refuel': ['Integrity'],
+      'Salvage': ['Efficiency/Radius/Speed', 'Radius/Speed', 'Radius/Speed'],
+      'TractorBeam': ['Integrity/Distance', 'Beam Force', 'Volume'],
+      'WeaponGun': ['Integrity', 'Impact Force', 'Impact Force']
+    };
+
+    // Try exact match first
+    if (effectMap[type]) return effectMap[type];
+
+    // Try case-insensitive match
+    for (const key in effectMap) {
+      if (key.toLowerCase() === type.toLowerCase()) {
+        return effectMap[key];
+      }
+    }
+
+    return ['Effect 1', 'Effect 2', 'Effect 3'];
   }
 };
 

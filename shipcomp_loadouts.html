@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Loadouts — Configure Loadout</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Exo+2:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shipcomp-styles.css">
+  <script src="shipcomp-utils.js"></script>
+
+  <style>
+    .loadouts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sl-spacing-xl);
+    }
+
+    .back-button {
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      font-size: 12px;
+    }
+
+    .hardpoint-row {
+      margin-bottom: var(--sl-spacing-xl);
+      padding-bottom: var(--sl-spacing-xl);
+      border-bottom: 1px solid var(--sl-border-secondary);
+    }
+
+    .hardpoint-row:last-child {
+      border-bottom: none;
+    }
+
+    .hardpoint-name {
+      font-family: var(--sl-font-body);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--sl-text-primary);
+      margin-bottom: var(--sl-spacing-lg);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--sl-spacing-lg);
+    }
+
+    .card {
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      border-radius: var(--sl-border-radius-lg);
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: var(--sl-bg-panel);
+      padding: var(--sl-spacing-md) var(--sl-spacing-lg);
+      border-bottom: 1px solid var(--sl-border-secondary);
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: bold;
+    }
+
+    .card-body {
+      padding: var(--sl-spacing-lg);
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-value {
+      font-family: var(--sl-font-body);
+      font-size: 13px;
+      color: var(--sl-text-secondary);
+      word-break: break-word;
+      flex: 1;
+    }
+
+    .card-value.satisfied {
+      color: var(--sl-accent-primary);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-dropdown {
+      width: 100%;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      color: var(--sl-text-primary);
+      font-family: var(--sl-font-body);
+      font-size: 12px;
+      border-radius: var(--sl-border-radius);
+      box-sizing: border-box;
+      margin-top: var(--sl-spacing-md);
+    }
+
+    .card-dropdown:focus {
+      outline: none;
+      border-color: var(--sl-accent-primary);
+      box-shadow: 0 0 0 2px rgba(240, 160, 64, 0.1);
+    }
+
+    .stock-card .card-body {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--sl-spacing-xl);
+      color: var(--sl-text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="loadouts-header">
+      <div>
+        <div class="module-header">
+          <p class="module-eyebrow">Ship Configuration</p>
+          <h1 class="module-title" id="shipTitle">Loading...</h1>
+        </div>
+      </div>
+      <button class="btn-accent back-button" onclick="goBackToHangar()">← Back to Hangar</button>
+    </div>
+
+    <div id="hardpointsContainer">
+      <div class="empty-state">
+        <p class="text-secondary">Loading hardpoints...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentShipId = null;
+    let currentShip = null;
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Read shipId from localStorage (set by hangar via postMessage)
+      const shipIdStr = localStorage.getItem('shipcomp-loadouts-shipId');
+      currentShipId = shipIdStr ? parseInt(shipIdStr) : null;
+
+      if (!currentShipId) {
+        document.getElementById('hardpointsContainer').innerHTML = `
+          <div class="empty-state">
+            <p class="text-secondary">No ship specified.</p>
+            <p class="text-dim" style="font-size: 12px;">Return to Hangar and click a ship's LOADOUT button.</p>
+          </div>
+        `;
+        return;
+      }
+
+      loadShipLoadout();
+      window.addEventListener('shipcomp-data-change', (e) => {
+        if (e.detail.key === 'loadouts' || e.detail.key === 'crafted-items') {
+          loadShipLoadout();
+        }
+      });
+    });
+
+    // Load ship and display hardpoints
+    function loadShipLoadout() {
+      const ships = ShipCompStorage.getShips();
+      const loadouts = ShipCompStorage.getLoadouts();
+      const allComponents = ShipCompStorage.getComponents();
+      const craftedItems = ShipCompStorage.getCraftedItems();
+
+      currentShip = ships.find(s => s.id === currentShipId);
+      if (!currentShip) {
+        document.getElementById('hardpointsContainer').innerHTML = `
+          <div class="empty-state">
+            <p class="text-secondary">Ship not found.</p>
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById('shipTitle').textContent = currentShip.name;
+
+      const stockLoadout = currentShip.stock_loadout || {};
+      console.log('Ship data:', currentShip);
+      console.log('Stock loadout:', stockLoadout);
+
+      if (Object.keys(stockLoadout).length === 0) {
+        document.getElementById('hardpointsContainer').innerHTML = `
+          <div class="empty-state">
+            <p class="text-secondary">No hardpoints found for this ship.</p>
+            <p class="text-dim" style="font-size: 12px;">Run Data Sync to load ship component data from Star Citizen Wiki.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const shipLoadout = loadouts[currentShipId] || {};
+
+      // Build hardpoint rows
+      const hardpointsHtml = Object.entries(stockLoadout).map(([hardpointName, stockComp]) => {
+        const type = stockComp.type;
+        const size = stockComp.size;
+        const slotData = shipLoadout[hardpointName] || { stock: null, current: null, target: null };
+
+        // Get matching components and crafted items
+        const matchingComponents = allComponents.filter(c =>
+          c.type === type && c.size === size
+        ).sort((a, b) => a.name.localeCompare(b.name));
+
+        const matchingCrafted = craftedItems.filter(c =>
+          c.type === type && c.size === size
+        ).sort((a, b) => a.name.localeCompare(b.name));
+
+        // Current dropdown: crafted first, then components
+        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, slotData.current);
+
+        // Target dropdown: only components
+        const targetOptions = buildTargetOptions(matchingComponents, slotData.target);
+
+        // Check if satisfied (current matches target, ignoring [CRAFTED] tag)
+        const isSatisfied = checkSatisfied(slotData.current, slotData.target);
+
+        // Get current component display name
+        const currentComp = slotData.current ? getComponentDisplay(slotData.current, matchingCrafted, matchingComponents) : '—';
+
+        // Get target component display name
+        const targetComp = slotData.target ? getComponentDisplay(slotData.target, matchingCrafted, matchingComponents) : '—';
+
+        // Get stock component display name
+        const stockDisplay = `${stockComp.name} (${stockComp.class} ${stockComp.grade})`;
+
+        return `
+          <div class="hardpoint-row">
+            <div class="hardpoint-name">${hardpointName} Size ${size}</div>
+            <div class="cards-container">
+              <!-- Stock Card -->
+              <div class="card stock-card">
+                <div class="card-header">Stock</div>
+                <div class="card-body">
+                  <div class="card-value">${stockDisplay}</div>
+                </div>
+              </div>
+
+              <!-- Current Card -->
+              <div class="card">
+                <div class="card-header">Current</div>
+                <div class="card-body">
+                  <div class="card-value">${currentComp}</div>
+                  <select class="card-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'current', this.value)">
+                    ${currentOptions}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Target Card -->
+              <div class="card">
+                <div class="card-header">Target</div>
+                <div class="card-body">
+                  <div class="card-value ${isSatisfied ? 'satisfied' : ''}">${isSatisfied ? 'SATISFIED' : targetComp}</div>
+                  <select class="card-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'target', this.value)">
+                    ${targetOptions}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('hardpointsContainer').innerHTML = hardpointsHtml;
+    }
+
+    // Build current dropdown options (crafted first, then components)
+    function buildCurrentOptions(crafted, components, currentValue) {
+      let options = '<option value="">— Select —</option>';
+
+      // Crafted items first
+      crafted.forEach(c => {
+        const label = `${c.name} [CRAFTED]`;
+        const selected = currentValue === `crafted:${c.id}` ? 'selected' : '';
+        options += `<option value="crafted:${c.id}" ${selected}>${label}</option>`;
+      });
+
+      // Then API components
+      components.forEach(c => {
+        const label = `${c.name} (${c.class} ${c.grade})`;
+        const selected = currentValue === `component:${c.uuid}` ? 'selected' : '';
+        options += `<option value="component:${c.uuid}" ${selected}>${label}</option>`;
+      });
+
+      return options;
+    }
+
+    // Build target dropdown options (only components)
+    function buildTargetOptions(components, targetValue) {
+      let options = '<option value="">— Select —</option>';
+
+      components.forEach(c => {
+        const label = `${c.name} (${c.class} ${c.grade})`;
+        const selected = targetValue === `component:${c.uuid}` ? 'selected' : '';
+        options += `<option value="component:${c.uuid}" ${selected}>${label}</option>`;
+      });
+
+      return options;
+    }
+
+    // Get component display name from value
+    function getComponentDisplay(value, crafted, components) {
+      if (!value) return '—';
+
+      if (value.startsWith('crafted:')) {
+        const craftedId = parseInt(value.split(':')[1]);
+        const item = crafted.find(c => c.id === craftedId);
+        return item ? `${item.name} [CRAFTED]` : '—';
+      } else if (value.startsWith('component:')) {
+        const uuid = value.split(':')[1];
+        const comp = components.find(c => c.uuid === uuid);
+        return comp ? `${comp.name} (${comp.class} ${comp.grade})` : '—';
+      }
+
+      return '—';
+    }
+
+    // Check if current satisfies target (ignoring [CRAFTED] tag)
+    function checkSatisfied(current, target) {
+      if (!current || !target) return false;
+
+      // Extract names without [CRAFTED] tag
+      const getCurrentName = () => {
+        if (current.startsWith('crafted:')) {
+          const allCrafted = ShipCompStorage.getCraftedItems();
+          const id = parseInt(current.split(':')[1]);
+          const item = allCrafted.find(c => c.id === id);
+          return item ? item.name : null;
+        } else if (current.startsWith('component:')) {
+          const allComps = ShipCompStorage.getComponents();
+          const uuid = current.split(':')[1];
+          const comp = allComps.find(c => c.uuid === uuid);
+          return comp ? comp.name : null;
+        }
+        return null;
+      };
+
+      const getTargetName = () => {
+        if (target.startsWith('component:')) {
+          const allComps = ShipCompStorage.getComponents();
+          const uuid = target.split(':')[1];
+          const comp = allComps.find(c => c.uuid === uuid);
+          return comp ? comp.name : null;
+        }
+        return null;
+      };
+
+      const currentName = getCurrentName();
+      const targetName = getTargetName();
+
+      return currentName && targetName && currentName === targetName;
+    }
+
+    // Save loadout slot
+    function saveLoadoutSlot(hardpointName, type, value) {
+      const loadouts = ShipCompStorage.getLoadouts();
+      if (!loadouts[currentShipId]) {
+        loadouts[currentShipId] = {};
+      }
+      if (!loadouts[currentShipId][hardpointName]) {
+        loadouts[currentShipId][hardpointName] = { stock: null, current: null, target: null };
+      }
+      loadouts[currentShipId][hardpointName][type] = value || null;
+      localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
+      ShipCompStorage.dispatchChange('loadouts');
+    }
+
+    // Go back to hangar
+    function goBackToHangar() {
+      localStorage.removeItem('shipcomp-loadouts-shipId');
+      window.parent.postMessage({
+        type: 'shipcomp-navigate',
+        src: 'shipcomp_hangar.html'
+      }, '*');
+    }
+  </script>
+</body>
+</html>

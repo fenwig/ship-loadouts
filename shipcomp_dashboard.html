@@ -116,7 +116,7 @@
       <button class="nav-link" onclick="switchModule('reports')">Reports</button>
       <button class="nav-link" onclick="switchModule('datasync')">Data Sync</button>
       <button class="nav-link" onclick="switchModule('codex')">Codex</button>
-      <button class="nav-link" disabled onclick="return false;">Inventory</button>
+      <button class="nav-link" onclick="switchModule('crafted')">Crafted</button>
     </div>
 
     <div class="sync-status">
@@ -179,11 +179,11 @@
     <iframe id="datasync-frame" class="module-frame" src="shipcomp_datasync.html"></iframe>
     <iframe id="hangar-frame" class="module-frame" src="shipcomp_hangar.html"></iframe>
     <iframe id="loadouts-frame" class="module-frame" src="shipcomp_loadouts.html"></iframe>
-    <iframe id="inventory-frame" class="module-frame" src="shipcomp_inventory.html"></iframe>
     <iframe id="itemsneeded-frame" class="module-frame" src="shipcomp_itemsneeded.html"></iframe>
     <iframe id="forgeworks-frame" class="module-frame" src="shipcomp_forgeworks.html"></iframe>
     <iframe id="reports-frame" class="module-frame" src="shipcomp_reports.html"></iframe>
     <iframe id="codex-frame" class="module-frame" src="shipcomp_codex.html"></iframe>
+    <iframe id="crafted-frame" class="module-frame" src="shipcomp_crafted.html"></iframe>
   </div>
 
   <script>
@@ -276,6 +276,27 @@
         event.target.classList.add('active');
       }
     }
+
+    // Listen for navigation messages from modules (postMessage)
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === 'shipcomp-navigate' && e.data?.src) {
+        // Handle loadouts navigation specially (single-ship view)
+        if (e.data.src === 'shipcomp_loadouts.html') {
+          document.querySelectorAll('.module-frame').forEach(frame => {
+            frame.classList.remove('active');
+          });
+          document.getElementById('dashboard-content').style.display = 'none';
+          document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+          });
+
+          const frame = document.getElementById('loadouts-frame');
+          if (frame) {
+            frame.classList.add('active');
+          }
+        }
+      }
+    });
 
     // Listen for storage changes (when other modules update data)
     window.addEventListener('storage', () => {
