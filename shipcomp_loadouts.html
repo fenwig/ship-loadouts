@@ -23,30 +23,74 @@
       font-size: 12px;
     }
 
+    .hardpoint-header {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr;
+      gap: var(--sl-spacing-lg);
+      margin-bottom: var(--sl-spacing-lg);
+      padding-bottom: var(--sl-spacing-lg);
+      border-bottom: 2px solid var(--sl-accent-primary);
+      font-family: var(--sl-font-data);
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--sl-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .hardpoint-row {
-      margin-bottom: var(--sl-spacing-xl);
-      padding-bottom: var(--sl-spacing-xl);
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr;
+      gap: var(--sl-spacing-lg);
+      margin-bottom: var(--sl-spacing-lg);
+      padding-bottom: var(--sl-spacing-lg);
       border-bottom: 1px solid var(--sl-border-secondary);
+      align-items: center;
     }
 
     .hardpoint-row:last-child {
       border-bottom: none;
     }
 
-    .hardpoint-name {
+    .hp-col-component {
       font-family: var(--sl-font-body);
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--sl-text-primary);
-      margin-bottom: var(--sl-spacing-lg);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    }
+
+    .hp-col-stock {
+      font-family: var(--sl-font-body);
+      font-size: 12px;
+      color: var(--sl-text-secondary);
+    }
+
+    .hp-col-current,
+    .hp-col-target {
+      display: flex;
+      align-items: center;
+    }
+
+    .hp-dropdown {
+      width: 100%;
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      background: var(--sl-bg-card);
+      border: 1px solid var(--sl-border-secondary);
+      color: var(--sl-text-primary);
+      font-family: var(--sl-font-body);
+      font-size: 12px;
+      border-radius: var(--sl-border-radius);
+      box-sizing: border-box;
+    }
+
+    .hp-dropdown:focus {
+      outline: none;
+      border-color: var(--sl-accent-primary);
+      box-shadow: 0 0 0 2px rgba(240, 160, 64, 0.1);
     }
 
     .cards-container {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--sl-spacing-lg);
+      display: none;
     }
 
     .card {
@@ -211,6 +255,27 @@
 
       const shipLoadout = loadouts[currentShipId] || {};
 
+      // Format hardpoint name (e.g., hardpoint_cooler → Cooler)
+      function formatHardpointName(name, size) {
+        return name
+          .replace('hardpoint_', '')
+          .replace(/_/g, ' ')
+          .split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')
+          .toUpperCase() + ' SIZE ' + size;
+      }
+
+      // Build header row
+      const headerHtml = `
+        <div class="hardpoint-header">
+          <div class="hp-col-component">COMPONENT</div>
+          <div class="hp-col-stock">STOCK</div>
+          <div class="hp-col-current">CURRENT</div>
+          <div class="hp-col-target">TARGET</div>
+        </div>
+      `;
+
       // Build hardpoint rows
       const hardpointsHtml = Object.entries(stockLoadout).map(([hardpointName, stockComp]) => {
         const type = stockComp.type;
@@ -226,63 +291,38 @@
           c.type === type && c.size === size
         ).sort((a, b) => a.name.localeCompare(b.name));
 
-        // Current dropdown: crafted first, then components
-        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, slotData.current);
+        // Current dropdown: pre-select stock, crafted first, then components
+        const stockValue = `component:${stockComp.component_uuid}`;
+        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, slotData.current || stockValue);
 
         // Target dropdown: only components
         const targetOptions = buildTargetOptions(matchingComponents, slotData.target);
 
         // Check if satisfied (current matches target, ignoring [CRAFTED] tag)
-        const isSatisfied = checkSatisfied(slotData.current, slotData.target);
-
-        // Get current component display name
-        const currentComp = slotData.current ? getComponentDisplay(slotData.current, matchingCrafted, matchingComponents) : '—';
-
-        // Get target component display name
-        const targetComp = slotData.target ? getComponentDisplay(slotData.target, matchingCrafted, matchingComponents) : '—';
+        const isSatisfied = checkSatisfied(slotData.current || stockValue, slotData.target);
 
         // Get stock component display name
         const stockDisplay = `${stockComp.component_name}${stockComp.class ? ' (' + stockComp.class + ' ' + stockComp.grade + ')' : ' (' + stockComp.grade + ')'}`;
 
         return `
           <div class="hardpoint-row">
-            <div class="hardpoint-name">${hardpointName} Size ${size}</div>
-            <div class="cards-container">
-              <!-- Stock Card -->
-              <div class="card stock-card">
-                <div class="card-header">Stock</div>
-                <div class="card-body">
-                  <div class="card-value">${stockDisplay}</div>
-                </div>
-              </div>
-
-              <!-- Current Card -->
-              <div class="card">
-                <div class="card-header">Current</div>
-                <div class="card-body">
-                  <div class="card-value">${currentComp}</div>
-                  <select class="card-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'current', this.value)">
-                    ${currentOptions}
-                  </select>
-                </div>
-              </div>
-
-              <!-- Target Card -->
-              <div class="card">
-                <div class="card-header">Target</div>
-                <div class="card-body">
-                  <div class="card-value ${isSatisfied ? 'satisfied' : ''}">${isSatisfied ? 'SATISFIED' : targetComp}</div>
-                  <select class="card-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'target', this.value)">
-                    ${targetOptions}
-                  </select>
-                </div>
-              </div>
+            <div class="hp-col-component">${formatHardpointName(hardpointName, size)}</div>
+            <div class="hp-col-stock">${stockDisplay}</div>
+            <div class="hp-col-current">
+              <select class="hp-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'current', this.value)">
+                ${currentOptions}
+              </select>
+            </div>
+            <div class="hp-col-target">
+              <select class="hp-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'target', this.value)">
+                ${targetOptions}
+              </select>
             </div>
           </div>
         `;
       }).join('');
 
-      document.getElementById('hardpointsContainer').innerHTML = hardpointsHtml;
+      document.getElementById('hardpointsContainer').innerHTML = headerHtml + hardpointsHtml;
     }
 
     // Build current dropdown options (crafted first, then components)
