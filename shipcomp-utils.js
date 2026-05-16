@@ -316,6 +316,11 @@ const DataHelpers = {
         return;
       }
 
+      // Exclude secondary/backup hardpoints (e.g., _cab_, _secondary variants)
+      if (hardpoint.name.includes('_cab_')) {
+        return;
+      }
+
       stock[hardpoint.name] = {
         component_uuid: hardpoint.item.uuid,
         component_name: hardpoint.item.name,

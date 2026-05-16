@@ -242,7 +242,7 @@
         const targetComp = slotData.target ? getComponentDisplay(slotData.target, matchingCrafted, matchingComponents) : '—';
 
         // Get stock component display name
-        const stockDisplay = `${stockComp.name} (${stockComp.class} ${stockComp.grade})`;
+        const stockDisplay = `${stockComp.component_name}${stockComp.class ? ' (' + stockComp.class + ' ' + stockComp.grade + ')' : ' (' + stockComp.grade + ')'}`;
 
         return `
           <div class="hardpoint-row">
