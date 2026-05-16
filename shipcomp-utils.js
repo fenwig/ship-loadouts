@@ -4,6 +4,22 @@
  */
 
 // ============================================
+// CONSTANTS
+// ============================================
+
+const TRACKABLE_TYPES = [
+  'PowerPlant',
+  'QuantumDrive',
+  'Shield',
+  'Cooler',
+  'Radar',
+  'TractorBeam',
+  'MiningLaser',
+  'Refuelling',
+  'SalvageModifier'
+];
+
+// ============================================
 // LOCALSTORAGE HELPERS
 // ============================================
 
@@ -281,20 +297,7 @@ const WikiAPI = {
       console.error(`Failed to fetch component ${uuid}:`, error);
       return null;
     }
-  },
-
-  // Component types to fetch (from app design doc)
-  TRACKABLE_TYPES: [
-    'PowerPlant',
-    'QuantumDrive',
-    'Shield',
-    'Cooler',
-    'Radar',
-    'TractorBeam',
-    'MiningLaser',
-    'Refuelling',
-    'SalvageModifier'
-  ]
+  }
 };
 
 // ============================================
@@ -309,7 +312,7 @@ const DataHelpers = {
 
     ship.hardpoints.forEach(hardpoint => {
       // Only include trackable component types
-      if (!hardpoint.item || !WikiAPI.TRACKABLE_TYPES.includes(hardpoint.type)) {
+      if (!hardpoint.item || !TRACKABLE_TYPES.includes(hardpoint.type)) {
         return;
       }
 
