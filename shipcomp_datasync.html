@@ -338,12 +338,25 @@
           }
         }
 
+        logMessage(`Fetching hardpoint data for ${ships.length} ships...`, 'info');
+        const shipsWithHardpoints = [];
+        for (let i = 0; i < ships.length; i++) {
+          const ship = ships[i];
+          const fullShip = await WikiAPI.getShip(ship.slug);
+          if (fullShip) {
+            shipsWithHardpoints.push(fullShip);
+          }
+          if ((i + 1) % 10 === 0) {
+            logMessage(`Fetched hardpoint data for ${i + 1}/${ships.length} ships...`, 'info');
+          }
+        }
+
         currentStep++;
         updateProgress(currentStep, totalSteps);
 
-        const normalizedShips = ships.map(ship => DataHelpers.normalizeShip(ship));
+        const normalizedShips = shipsWithHardpoints.map(ship => DataHelpers.normalizeShip(ship));
         ShipCompStorage.setShips(normalizedShips);
-        logMessage(`✓ Loaded ${normalizedShips.length} ships`, 'success');
+        logMessage(`✓ Loaded ${normalizedShips.length} ships with hardpoint data`, 'success');
 
         logMessage('Fetching components...', 'info');
         const allComponents = [];
