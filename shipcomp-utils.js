@@ -309,7 +309,7 @@ const DataHelpers = {
 
     ship.hardpoints.forEach(hardpoint => {
       // Only include trackable component types
-      if (!hardpoint.item || !this.TRACKABLE_TYPES.includes(hardpoint.type)) {
+      if (!hardpoint.item || !WikiAPI.TRACKABLE_TYPES.includes(hardpoint.type)) {
         return;
       }
 
