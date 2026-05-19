@@ -22,8 +22,7 @@
       display: flex;
       gap: var(--sl-spacing-lg);
       flex-wrap: wrap;
-      padding: var(--sl-spacing-lg);
-      padding-top: 0;
+      padding: var(--sl-spacing-lg) var(--sl-spacing-lg) 0 var(--sl-spacing-lg);
     }
 
     .nav-link {
@@ -89,7 +88,8 @@
     .logo-section {
       width: 100%;
       padding: 0;
-      margin: 0 0 var(--sl-spacing-lg) 0;
+      margin: 0 0 var(--sl-spacing-xs) 0;
+      text-align: center;
     }
 
     .logo-banner {
@@ -110,17 +110,11 @@
     <div class="nav-links">
       <button class="nav-link active" onclick="switchModule('dashboard')">Dashboard</button>
       <button class="nav-link" onclick="switchModule('hangar')">Hangar</button>
-      <button class="nav-link" onclick="switchModule('loadouts')">Loadouts</button>
       <button class="nav-link" onclick="switchModule('itemsneeded')">Items Needed</button>
-      <button class="nav-link" onclick="switchModule('forgeworks')">Forgeworks Import</button>
+      <button class="nav-link" onclick="switchModule('crafted')">Crafted</button>
       <button class="nav-link" onclick="switchModule('reports')">Reports</button>
       <button class="nav-link" onclick="switchModule('datasync')">Data Sync</button>
       <button class="nav-link" onclick="switchModule('codex')">Codex</button>
-      <button class="nav-link" onclick="switchModule('crafted')">Crafted</button>
-    </div>
-
-    <div class="sync-status">
-      Last sync: <span id="last-sync">Never</span>
     </div>
   </div>
 

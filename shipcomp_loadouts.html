@@ -164,6 +164,45 @@
       padding: var(--sl-spacing-xl);
       color: var(--sl-text-secondary);
     }
+
+    .tabs-container {
+      display: flex;
+      gap: var(--sl-spacing-md);
+      margin-bottom: var(--sl-spacing-xl);
+      border-bottom: 1px solid var(--sl-border-secondary);
+    }
+
+    .tab-button {
+      padding: var(--sl-spacing-md) var(--sl-spacing-lg);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-family: var(--sl-font-data);
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--sl-text-dim);
+      cursor: pointer;
+      transition: all var(--sl-transition-fast);
+    }
+
+    .tab-button:hover {
+      color: var(--sl-accent-primary);
+    }
+
+    .tab-button.active {
+      color: var(--sl-accent-primary);
+      border-bottom-color: var(--sl-accent-primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -178,9 +217,22 @@
       <button class="btn-accent back-button" onclick="goBackToHangar()">← Back to Hangar</button>
     </div>
 
-    <div id="hardpointsContainer">
+    <div class="tabs-container">
+      <button class="tab-button active" onclick="switchTab('system')">System</button>
+      <button class="tab-button" onclick="switchTab('weapons')">Weapons</button>
+    </div>
+
+    <div id="systemTab" class="tab-content active">
+      <div id="hardpointsContainer">
+        <div class="empty-state">
+          <p class="text-secondary">Loading hardpoints...</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="weaponsTab" class="tab-content">
       <div class="empty-state">
-        <p class="text-secondary">Loading hardpoints...</p>
+        <p class="text-secondary">Weapons configuration coming soon.</p>
       </div>
     </div>
   </div>
@@ -204,6 +256,10 @@
         `;
         return;
       }
+
+      // Restore active tab preference
+      const activeTab = localStorage.getItem('shipcomp-loadouts-activeTab') || 'system';
+      switchTab(activeTab);
 
       // Wait for ShipCompStorage to be available
       if (typeof ShipCompStorage === 'undefined') {
@@ -253,7 +309,25 @@
         return;
       }
 
-      const shipLoadout = loadouts[currentShipId] || {};
+      let shipLoadout = loadouts[currentShipId] || {};
+
+      // Initialize CURRENT with STOCK values if not already set
+      let loadoutChanged = false;
+      for (const hardpointName in stockLoadout) {
+        if (!shipLoadout[hardpointName]) {
+          shipLoadout[hardpointName] = { stock: null, current: null, target: null };
+        }
+        if (!shipLoadout[hardpointName].current) {
+          shipLoadout[hardpointName].current = `component:${stockLoadout[hardpointName].component_uuid}`;
+          loadoutChanged = true;
+        }
+      }
+
+      // Save if we initialized any values
+      if (loadoutChanged) {
+        loadouts[currentShipId] = shipLoadout;
+        localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
+      }
 
       // Format hardpoint name (e.g., hardpoint_cooler → Cooler)
       function formatHardpointName(name, size) {
@@ -424,6 +498,30 @@
       loadouts[currentShipId][hardpointName][type] = value || null;
       localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
       ShipCompStorage.dispatchChange('loadouts');
+    }
+
+    // Switch between tabs
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.getElementById('systemTab').classList.remove('active');
+      document.getElementById('weaponsTab').classList.remove('active');
+
+      // Remove active class from all tab buttons
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected tab
+      if (tabName === 'system') {
+        document.getElementById('systemTab').classList.add('active');
+        document.querySelectorAll('.tab-button')[0].classList.add('active');
+      } else if (tabName === 'weapons') {
+        document.getElementById('weaponsTab').classList.add('active');
+        document.querySelectorAll('.tab-button')[1].classList.add('active');
+      }
+
+      // Save tab preference
+      localStorage.setItem('shipcomp-loadouts-activeTab', tabName);
     }
 
     // Go back to hangar
