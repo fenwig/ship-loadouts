@@ -544,7 +544,7 @@
     }
 
     // Debug: Query Wiki API directly for component availability
-    async function debugComponentAvailability(type) {
+    window.debugComponentAvailability = async function(type) {
       console.log(`\n=== Querying Wiki API for ${type} ===`);
       const components = await WikiAPI.getComponentsByType(type);
 
@@ -563,15 +563,15 @@
           console.log(`  - ${c.name} (${c.class} ${c.grade})`);
         });
       }
-    }
+    };
 
     // Debug helper - run from console: debugAllComponentTypes()
-    async function debugAllComponentTypes() {
+    window.debugAllComponentTypes = async function() {
       const types = ['PowerPlant', 'Shield', 'Radar', 'QuantumDrive', 'Cooler'];
       for (const type of types) {
         await debugComponentAvailability(type);
       }
-    }
+    };
 
     // Go back to hangar
     function goBackToHangar() {
