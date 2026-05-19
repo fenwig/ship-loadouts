@@ -372,7 +372,7 @@
         const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, stockComp, slotData.current || stockValue);
 
         // Target dropdown: only components
-        const targetOptions = buildTargetOptions(matchingComponents, slotData.target);
+        const targetOptions = buildTargetOptions(matchingComponents, slotData.target, hardpointName);
 
         // Check if satisfied (current matches target, ignoring [CRAFTED] tag)
         const isSatisfied = checkSatisfied(slotData.current || stockValue, slotData.target);
@@ -431,8 +431,13 @@
     }
 
     // Build target dropdown options (only components)
-    function buildTargetOptions(components, targetValue) {
+    function buildTargetOptions(components, targetValue, hardpointName) {
       let options = '<option value="">— Select —</option>';
+
+      // Log available options for this hardpoint
+      if (components.length > 0) {
+        console.log(`TARGET options for ${hardpointName}:`, components.map(c => `${c.name} (${c.class} ${c.grade})`));
+      }
 
       components.forEach(c => {
         const label = `${c.name} (${c.class} ${c.grade})`;
