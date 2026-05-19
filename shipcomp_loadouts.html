@@ -27,7 +27,7 @@
 
     .hardpoint-header {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 2fr 2fr 1fr;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr;
       gap: var(--sl-spacing-lg);
       margin-bottom: var(--sl-spacing-lg);
       padding-bottom: var(--sl-spacing-lg);
@@ -38,11 +38,12 @@
       color: var(--sl-text-dim);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      align-items: center;
     }
 
     .hardpoint-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 2fr 2fr 1fr;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr;
       gap: var(--sl-spacing-lg);
       margin-bottom: var(--sl-spacing-lg);
       padding-bottom: var(--sl-spacing-lg);
@@ -89,6 +90,13 @@
       outline: none;
       border-color: var(--sl-accent-primary);
       box-shadow: 0 0 0 2px rgba(240, 160, 64, 0.1);
+    }
+
+    .header-reset-btn {
+      padding: var(--sl-spacing-sm) var(--sl-spacing-md);
+      font-size: 11px;
+      margin-left: var(--sl-spacing-md);
+      display: inline-block;
     }
 
     .cards-container {
@@ -349,9 +357,11 @@
         <div class="hardpoint-header">
           <div class="hp-col-component">COMPONENT</div>
           <div class="hp-col-stock">STOCK</div>
-          <div class="hp-col-current">CURRENT</div>
+          <div class="hp-col-current">
+            CURRENT
+            <button class="btn-accent header-reset-btn" onclick="resetAllToStock()">RESET TO STOCK</button>
+          </div>
           <div class="hp-col-target">TARGET</div>
-          <div></div>
         </div>
       `;
 
@@ -426,9 +436,6 @@
               <select class="hp-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'target', this.value)">
                 ${targetOptions}
               </select>
-            </div>
-            <div>
-              <button class="btn-accent" style="width: 100%; padding: var(--sl-spacing-sm) var(--sl-spacing-md); font-size: 11px;" onclick="resetToStock('${hardpointName}')">Reset</button>
             </div>
           </div>
         `;
@@ -554,18 +561,32 @@
       ShipCompStorage.dispatchChange('loadouts');
     }
 
-    // Reset CURRENT to STOCK for a hardpoint
-    function resetToStock(hardpointName) {
+    // Reset all CURRENT values to STOCK for all hardpoints
+    function resetAllToStock() {
       const ships = ShipCompStorage.getShips();
       const ship = ships.find(s => s.id === currentShipId);
       if (!ship) return;
 
       const stockLoadout = ship.stock_loadout || {};
-      const stockComp = stockLoadout[hardpointName];
-      if (!stockComp) return;
+      const loadouts = ShipCompStorage.getLoadouts();
 
-      const stockValue = `component:${stockComp.component_uuid}`;
-      saveLoadoutSlot(hardpointName, 'current', stockValue);
+      if (!loadouts[currentShipId]) {
+        loadouts[currentShipId] = {};
+      }
+
+      // Reset all hardpoints to stock
+      for (const hardpointName in stockLoadout) {
+        const stockComp = stockLoadout[hardpointName];
+        const stockValue = `component:${stockComp.component_uuid}`;
+
+        if (!loadouts[currentShipId][hardpointName]) {
+          loadouts[currentShipId][hardpointName] = { stock: null, current: null, target: null };
+        }
+        loadouts[currentShipId][hardpointName].current = stockValue;
+      }
+
+      localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
+      ShipCompStorage.dispatchChange('loadouts');
     }
 
     // Switch between tabs
