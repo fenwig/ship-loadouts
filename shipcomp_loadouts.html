@@ -543,6 +543,36 @@
       localStorage.setItem('shipcomp-loadouts-activeTab', tabName);
     }
 
+    // Debug: Query Wiki API directly for component availability
+    async function debugComponentAvailability(type) {
+      console.log(`\n=== Querying Wiki API for ${type} ===`);
+      const components = await WikiAPI.getComponentsByType(type);
+
+      // Group by size
+      const bySize = {};
+      components.forEach(c => {
+        if (!bySize[c.size]) bySize[c.size] = [];
+        bySize[c.size].push(c);
+      });
+
+      // Log each size group
+      for (const size in bySize) {
+        const sizeComponents = bySize[size];
+        console.log(`\n${type} Size ${size}: ${sizeComponents.length} components`);
+        sizeComponents.forEach(c => {
+          console.log(`  - ${c.name} (${c.class} ${c.grade})`);
+        });
+      }
+    }
+
+    // Debug helper - run from console: debugAllComponentTypes()
+    async function debugAllComponentTypes() {
+      const types = ['PowerPlant', 'Shield', 'Radar', 'QuantumDrive', 'Cooler'];
+      for (const type of types) {
+        await debugComponentAvailability(type);
+      }
+    }
+
     // Go back to hangar
     function goBackToHangar() {
       localStorage.removeItem('shipcomp-loadouts-shipId');
