@@ -232,14 +232,10 @@
       }
     }
 
-    // Update last sync time
+    // Update last sync time (deprecated - moved to data sync view)
     function updateLastSync() {
-      const syncMeta = JSON.parse(localStorage.getItem('shipcomp-sync-meta') || '{}');
-      if (syncMeta.date) {
-        const date = new Date(syncMeta.date);
-        const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        document.getElementById('last-sync').textContent = formatted;
-      }
+      // Last sync display moved to Data Sync view
+      // This function is kept for compatibility but does nothing
     }
 
     // Switch between modules
