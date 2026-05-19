@@ -354,8 +354,33 @@
         </div>
       `;
 
-      // Build hardpoint rows
-      const hardpointsHtml = Object.entries(stockLoadout).map(([hardpointName, stockComp]) => {
+      // Define component type sort order (groups similar components together)
+      function getComponentTypePriority(type) {
+        const priority = {
+          'PowerPlant': 0,
+          'QuantumDrive': 1,
+          'Shield': 2,
+          'Cooler': 3,
+          'Radar': 4
+        };
+        return priority[type] !== undefined ? priority[type] : 99;
+      }
+
+      // Build hardpoint rows - sort by component type to group similar items
+      const hardpointEntries = Object.entries(stockLoadout).sort(([nameA, compA], [nameB, compB]) => {
+        const priorityA = getComponentTypePriority(compA.type);
+        const priorityB = getComponentTypePriority(compB.type);
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        // If same type, sort by size then by name
+        if (compA.size !== compB.size) {
+          return compA.size - compB.size;
+        }
+        return nameA.localeCompare(nameB);
+      });
+
+      const hardpointsHtml = hardpointEntries.map(([hardpointName, stockComp]) => {
         const type = stockComp.type;
         const size = stockComp.size;
         const slotData = shipLoadout[hardpointName] || { stock: null, current: null, target: null };

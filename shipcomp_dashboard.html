@@ -262,14 +262,28 @@
         if (frame) {
           frame.classList.add('active');
         }
-        // Mark nav link as active
-        event.target.classList.add('active');
+        // Mark nav link as active (handle both direct clicks and postMessage calls)
+        if (event && event.target && event.target.classList) {
+          event.target.classList.add('active');
+        } else {
+          // If called from postMessage, find the nav button by matching the module name
+          const navButtons = document.querySelectorAll('.nav-link');
+          const moduleMap = ['dashboard', 'hangar', 'itemsneeded', 'crafted', 'reports', 'datasync', 'codex'];
+          const moduleIndex = moduleMap.indexOf(moduleName);
+          if (moduleIndex >= 0 && navButtons[moduleIndex]) {
+            navButtons[moduleIndex].classList.add('active');
+          }
+        }
       }
     }
 
     // Listen for navigation messages from modules (postMessage)
     window.addEventListener('message', (e) => {
       if (e.data?.type === 'shipcomp-navigate' && e.data?.src) {
+        // Extract module name from src (e.g., 'shipcomp_hangar.html' -> 'hangar')
+        const srcMatch = e.data.src.match(/shipcomp_(\w+)\.html/);
+        const moduleName = srcMatch ? srcMatch[1] : null;
+
         // Handle loadouts navigation specially (single-ship view)
         if (e.data.src === 'shipcomp_loadouts.html') {
           document.querySelectorAll('.module-frame').forEach(frame => {
@@ -286,6 +300,9 @@
             frame.src = 'shipcomp_loadouts.html';
             frame.classList.add('active');
           }
+        } else if (moduleName) {
+          // Handle navigation to other modules (e.g., hangar, datasync)
+          switchModule(moduleName);
         }
       }
     });
