@@ -311,6 +311,8 @@
 
       let shipLoadout = loadouts[currentShipId] || {};
 
+      console.log('Starting hardpoint initialization...');
+
       // Initialize CURRENT with STOCK values if not already set
       let loadoutChanged = false;
       for (const hardpointName in stockLoadout) {
