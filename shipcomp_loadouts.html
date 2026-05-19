@@ -363,6 +363,10 @@
           c.type === type && c.size === size
         ).sort((a, b) => a.name.localeCompare(b.name));
 
+        // Log component availability
+        const allTypeComponents = allComponents.filter(c => c.type === type);
+        console.log(`Component type "${type}": ${allTypeComponents.length} total, ${matchingComponents.length} for size ${size}`);
+
         const matchingCrafted = craftedItems.filter(c =>
           c.type === type && c.size === size
         ).sort((a, b) => a.name.localeCompare(b.name));
