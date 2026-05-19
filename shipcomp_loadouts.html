@@ -311,18 +311,10 @@
 
       let shipLoadout = loadouts[currentShipId] || {};
 
-      console.log('Starting hardpoint initialization...');
-
       // Initialize CURRENT with STOCK values if not already set
       let loadoutChanged = false;
       for (const hardpointName in stockLoadout) {
         const stockComp = stockLoadout[hardpointName];
-        console.log(`Hardpoint: ${hardpointName}`, {
-          component_uuid: stockComp.component_uuid,
-          component_name: stockComp.component_name,
-          has_shipLoadout_entry: !!shipLoadout[hardpointName],
-          has_current_value: shipLoadout[hardpointName]?.current
-        });
 
         if (!shipLoadout[hardpointName]) {
           shipLoadout[hardpointName] = { stock: null, current: null, target: null };
@@ -330,7 +322,6 @@
         if (!shipLoadout[hardpointName].current) {
           shipLoadout[hardpointName].current = `component:${stockComp.component_uuid}`;
           loadoutChanged = true;
-          console.log(`Initialized ${hardpointName} to stock: ${shipLoadout[hardpointName].current}`);
         }
       }
 
@@ -338,7 +329,6 @@
       if (loadoutChanged) {
         loadouts[currentShipId] = shipLoadout;
         localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
-        console.log('Saved loadout to localStorage:', shipLoadout);
       }
 
       // Format hardpoint name (e.g., hardpoint_cooler → Cooler)
