@@ -233,6 +233,24 @@
       flex: 1;
       padding: var(--sl-spacing-sm) var(--sl-spacing-lg);
     }
+
+    /* Blue LOADOUT button style */
+    .btn-loadout {
+      background: #0099ff;
+      color: #ffffff;
+      border-color: #0099ff;
+      font-weight: bold;
+    }
+
+    .btn-loadout:hover {
+      background: #0077cc;
+      border-color: #0077cc;
+      color: #ffffff;
+    }
+
+    .btn-loadout:active {
+      transform: scale(0.98);
+    }
   </style>
 </head>
 <body>
@@ -396,7 +414,7 @@
       const entriesHtml = hangar.map(entry => `
         <div class="hangar-entry">
           <div class="entry-ship-name">${entry.shipName}</div>
-          <div><button class="btn-primary" onclick="goToLoadouts(${entry.shipId})" style="width: 100%; padding: var(--sl-spacing-sm) var(--sl-spacing-md); font-size: 11px;">Loadout</button></div>
+          <div><button class="btn-loadout" onclick="goToLoadouts(${entry.shipId})" style="width: 100%; padding: var(--sl-spacing-sm) var(--sl-spacing-md); font-size: 11px;">LOADOUT</button></div>
           <div><span class="badge badge-${entry.status === 'Procured' ? 'success' : 'warning'}">${entry.status}</span></div>
           <div class="entry-acquired">${entry.acquired}</div>
           <div class="entry-notes" title="${entry.notes}">${entry.notes || '—'}</div>
