@@ -27,7 +27,7 @@
 
     .hardpoint-header {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 2fr 2fr;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr 1fr;
       gap: var(--sl-spacing-lg);
       margin-bottom: var(--sl-spacing-lg);
       padding-bottom: var(--sl-spacing-lg);
@@ -42,7 +42,7 @@
 
     .hardpoint-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 2fr 2fr;
+      grid-template-columns: 2fr 1.5fr 2fr 2fr 1fr;
       gap: var(--sl-spacing-lg);
       margin-bottom: var(--sl-spacing-lg);
       padding-bottom: var(--sl-spacing-lg);
@@ -351,6 +351,7 @@
           <div class="hp-col-stock">STOCK</div>
           <div class="hp-col-current">CURRENT</div>
           <div class="hp-col-target">TARGET</div>
+          <div></div>
         </div>
       `;
 
@@ -425,6 +426,9 @@
               <select class="hp-dropdown" onchange="saveLoadoutSlot('${hardpointName}', 'target', this.value)">
                 ${targetOptions}
               </select>
+            </div>
+            <div>
+              <button class="btn-accent" style="width: 100%; padding: var(--sl-spacing-sm) var(--sl-spacing-md); font-size: 11px;" onclick="resetToStock('${hardpointName}')">Reset</button>
             </div>
           </div>
         `;
@@ -548,6 +552,20 @@
       loadouts[currentShipId][hardpointName][type] = value || null;
       localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
       ShipCompStorage.dispatchChange('loadouts');
+    }
+
+    // Reset CURRENT to STOCK for a hardpoint
+    function resetToStock(hardpointName) {
+      const ships = ShipCompStorage.getShips();
+      const ship = ships.find(s => s.id === currentShipId);
+      if (!ship) return;
+
+      const stockLoadout = ship.stock_loadout || {};
+      const stockComp = stockLoadout[hardpointName];
+      if (!stockComp) return;
+
+      const stockValue = `component:${stockComp.component_uuid}`;
+      saveLoadoutSlot(hardpointName, 'current', stockValue);
     }
 
     // Switch between tabs

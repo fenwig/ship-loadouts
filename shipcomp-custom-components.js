@@ -400,8 +400,13 @@ function mergeComponentData(type, size, apiComponents) {
   const customComps = getCustomComponents(type, size);
   const customNames = new Set(customComps.map(c => c.name.toLowerCase()));
 
+  // Add uuid to custom components (use name as unique identifier)
+  const merged = customComps.map(c => ({
+    ...c,
+    uuid: c.uuid || `custom-${c.name.toLowerCase().replace(/\s+/g, '-')}`
+  }));
+
   // Add any API components not in custom data
-  const merged = [...customComps];
   apiComponents.forEach(apiComp => {
     if (!customNames.has(apiComp.name.toLowerCase())) {
       merged.push({
@@ -409,7 +414,8 @@ function mergeComponentData(type, size, apiComponents) {
         size: apiComp.size,
         class: apiComp.class || null,
         grade: apiComp.grade,
-        manufacturer: apiComp.manufacturer || 'Unknown'
+        manufacturer: apiComp.manufacturer || 'Unknown',
+        uuid: apiComp.uuid
       });
     }
   });
