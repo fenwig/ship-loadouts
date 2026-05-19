@@ -409,13 +409,16 @@
           c.type === type && c.size === size
         ).sort((a, b) => a.name.localeCompare(b.name));
 
-        // Current dropdown: pre-select stock, crafted first, then components
-        const stockValue = `component:${stockComp.component_uuid}`;
-        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, stockComp, slotData.current || stockValue);
-
-        // Target dropdown: merge custom components with API components
+        // Merge and sort components for both CURRENT and TARGET dropdowns
         const mergedComponents = mergeComponentData(type, size, matchingComponents);
-        const targetOptions = buildTargetOptions(mergedComponents, slotData.target, hardpointName);
+        const sortedComponents = sortComponentsByPriority([...mergedComponents]);
+
+        // Current dropdown: stock, crafted items, then merged/sorted components
+        const stockValue = `component:${stockComp.component_uuid}`;
+        const currentOptions = buildCurrentOptions(matchingCrafted, sortedComponents, stockComp, slotData.current || stockValue);
+
+        // Target dropdown: merged/sorted components only
+        const targetOptions = buildTargetOptions(sortedComponents, slotData.target, hardpointName);
 
         // Check if satisfied (current matches target, ignoring [CRAFTED] tag)
         const isSatisfied = checkSatisfied(slotData.current || stockValue, slotData.target);
@@ -444,7 +447,9 @@
       document.getElementById('hardpointsContainer').innerHTML = headerHtml + hardpointsHtml;
     }
 
-    // Build current dropdown options (stock first, then crafted, then components)
+    // Build current dropdown options (stock, crafted items, then merged/sorted components)
+    // NOTE: When Crafted system is implemented, crafted items will be merged into sortedComponents
+    // at that point with a [CRAFTED] tag. For now, they're shown separately at the top after stock.
     function buildCurrentOptions(crafted, components, stockComponent, currentValue) {
       let options = '<option value="">— Select —</option>';
 
@@ -456,14 +461,14 @@
         options += `<option value="${stockValue}" ${selected}>${stockLabel}</option>`;
       }
 
-      // Crafted items
+      // Crafted items (separate section; will be integrated into components list when crafted system is live)
       crafted.forEach(c => {
         const label = `${c.name} [CRAFTED]`;
         const selected = currentValue === `crafted:${c.id}` ? 'selected' : '';
         options += `<option value="crafted:${c.id}" ${selected}>${label}</option>`;
       });
 
-      // Then API components
+      // Merged/sorted components (same list as TARGET, in priority order: Military→Stealth→Industrial→Competition→Civilian)
       components.forEach(c => {
         const label = `${c.name} (${c.class} ${c.grade})`;
         const selected = currentValue === `component:${c.uuid}` ? 'selected' : '';
@@ -473,19 +478,17 @@
       return options;
     }
 
-    // Build target dropdown options (only components)
+    // Build target dropdown options (only components - expects pre-sorted input)
     function buildTargetOptions(components, targetValue, hardpointName) {
       let options = '<option value="">— Select —</option>';
 
-      // Sort components by priority (Military→Stealth→Industrial→Competition→Civilian, then A-D)
-      const sortedComponents = sortComponentsByPriority([...components]);
-
+      // Components are pre-sorted by priority in loadShipLoadout()
       // Log available options for this hardpoint
-      if (sortedComponents.length > 0) {
-        console.log(`TARGET options for ${hardpointName}:`, sortedComponents.map(c => `${c.name} (${c.class} ${c.grade})`));
+      if (components.length > 0) {
+        console.log(`TARGET options for ${hardpointName}:`, components.map(c => `${c.name} (${c.class} ${c.grade})`));
       }
 
-      sortedComponents.forEach(c => {
+      components.forEach(c => {
         const label = `${c.name} (${c.class} ${c.grade})`;
         const selected = targetValue === `component:${c.uuid}` ? 'selected' : '';
         options += `<option value="component:${c.uuid}" ${selected}>${label}</option>`;
