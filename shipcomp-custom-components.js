@@ -422,3 +422,43 @@ function mergeComponentData(type, size, apiComponents) {
 
   return merged;
 }
+
+// Helper: Sort components by priority order (Military→Stealth→Industrial→Competition→Civilian, then by grade A-D)
+function sortComponentsByPriority(components) {
+  const classPriority = {
+    'Military': 0,
+    'Stealth': 1,
+    'Industrial': 2,
+    'Competition': 3,
+    'Civilian': 4
+  };
+
+  const gradePriority = {
+    'A': 0,
+    'B': 1,
+    'C': 2,
+    'D': 3
+  };
+
+  return components.sort((a, b) => {
+    // Get class priority (default to 5 for null/unknown classes)
+    const classA = classPriority[a.class] !== undefined ? classPriority[a.class] : 5;
+    const classB = classPriority[b.class] !== undefined ? classPriority[b.class] : 5;
+
+    // If classes differ, sort by class priority
+    if (classA !== classB) {
+      return classA - classB;
+    }
+
+    // If classes are the same, sort by grade priority
+    const gradeA = gradePriority[a.grade] !== undefined ? gradePriority[a.grade] : 4;
+    const gradeB = gradePriority[b.grade] !== undefined ? gradePriority[b.grade] : 4;
+
+    if (gradeA !== gradeB) {
+      return gradeA - gradeB;
+    }
+
+    // If class and grade are the same, sort alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
+}

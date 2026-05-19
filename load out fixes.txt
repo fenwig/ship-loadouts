@@ -1,0 +1,5 @@
+Thoughts
+tab for weapons v systems
+TARGET - acquired when current matches target
+When add to target , entry on shopping list shows the ship assigned
+when acquired, removed from lsit.

@@ -441,12 +441,15 @@
     function buildTargetOptions(components, targetValue, hardpointName) {
       let options = '<option value="">— Select —</option>';
 
+      // Sort components by priority (Military→Stealth→Industrial→Competition→Civilian, then A-D)
+      const sortedComponents = sortComponentsByPriority([...components]);
+
       // Log available options for this hardpoint
-      if (components.length > 0) {
-        console.log(`TARGET options for ${hardpointName}:`, components.map(c => `${c.name} (${c.class} ${c.grade})`));
+      if (sortedComponents.length > 0) {
+        console.log(`TARGET options for ${hardpointName}:`, sortedComponents.map(c => `${c.name} (${c.class} ${c.grade})`));
       }
 
-      components.forEach(c => {
+      sortedComponents.forEach(c => {
         const label = `${c.name} (${c.class} ${c.grade})`;
         const selected = targetValue === `component:${c.uuid}` ? 'selected' : '';
         options += `<option value="component:${c.uuid}" ${selected}>${label}</option>`;
