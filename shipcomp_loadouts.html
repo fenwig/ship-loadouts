@@ -367,7 +367,7 @@
 
         // Current dropdown: pre-select stock, crafted first, then components
         const stockValue = `component:${stockComp.component_uuid}`;
-        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, slotData.current || stockValue);
+        const currentOptions = buildCurrentOptions(matchingCrafted, matchingComponents, stockComp, slotData.current || stockValue);
 
         // Target dropdown: only components
         const targetOptions = buildTargetOptions(matchingComponents, slotData.target);
@@ -399,11 +399,19 @@
       document.getElementById('hardpointsContainer').innerHTML = headerHtml + hardpointsHtml;
     }
 
-    // Build current dropdown options (crafted first, then components)
-    function buildCurrentOptions(crafted, components, currentValue) {
+    // Build current dropdown options (stock first, then crafted, then components)
+    function buildCurrentOptions(crafted, components, stockComponent, currentValue) {
       let options = '<option value="">— Select —</option>';
 
-      // Crafted items first
+      // Stock component first (always available)
+      if (stockComponent) {
+        const stockValue = `component:${stockComponent.component_uuid}`;
+        const stockLabel = `${stockComponent.component_name} [STOCK]`;
+        const selected = currentValue === stockValue ? 'selected' : '';
+        options += `<option value="${stockValue}" ${selected}>${stockLabel}</option>`;
+      }
+
+      // Crafted items
       crafted.forEach(c => {
         const label = `${c.name} [CRAFTED]`;
         const selected = currentValue === `crafted:${c.id}` ? 'selected' : '';
