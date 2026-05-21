@@ -16,7 +16,12 @@ const TRACKABLE_TYPES = [
   'TractorBeam',
   'MiningLaser',
   'Refuelling',
-  'SalvageModifier'
+  'SalvageModifier',
+  'Turret',
+  'MissileLauncher',
+  'WeaponDefensive',
+  'WeaponGun',
+  'Missile'
 ];
 
 // ============================================
@@ -334,6 +339,47 @@ const DataHelpers = {
     return stock;
   },
 
+  // Extract weapon loadout from a ship response
+  extractWeaponLoadout(ship) {
+    const weapons = {};
+    if (!ship.hardpoints) return weapons;
+
+    const weaponTypes = ['Turret', 'MissileLauncher', 'WeaponDefensive'];
+
+    ship.hardpoints.forEach(hardpoint => {
+      // Only include weapon mount types (parent hardpoints only, not children)
+      if (!hardpoint.item || !weaponTypes.includes(hardpoint.type)) {
+        return;
+      }
+
+      // Get the stock weapon from children (if available)
+      let stockWeapon = null;
+      if (hardpoint.children && hardpoint.children.length > 0) {
+        const firstChild = hardpoint.children[0];
+        if (firstChild.item) {
+          stockWeapon = {
+            uuid: firstChild.item.uuid,
+            name: firstChild.item.name,
+            type: firstChild.type,
+            size: firstChild.item.size,
+            sub_type: firstChild.sub_type
+          };
+        }
+      }
+
+      weapons[hardpoint.name] = {
+        mount_uuid: hardpoint.item.uuid,
+        mount_name: hardpoint.item.name,
+        mount_type: hardpoint.type,
+        mount_sub_type: hardpoint.sub_type,
+        mount_size: hardpoint.item.size,
+        stock_weapon: stockWeapon
+      };
+    });
+
+    return weapons;
+  },
+
   // Parse component response into normalized format
   normalizeComponent(apiComponent) {
     return {
@@ -365,6 +411,7 @@ const DataHelpers = {
       role: apiShip.role,
       production_status: apiShip.production_status,
       stock_loadout: this.extractStockLoadout(apiShip),
+      stock_weapons_loadout: this.extractWeaponLoadout(apiShip),
       version: apiShip.version,
       thumbnail_url: thumbnail
     };
