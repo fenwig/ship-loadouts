@@ -344,27 +344,41 @@ const DataHelpers = {
     const weapons = {};
     if (!ship.hardpoints) return weapons;
 
-    const weaponTypes = ['Turret', 'MissileLauncher', 'WeaponDefensive'];
+    const weaponTypes = ['Turret', 'MissileLauncher'];
 
     ship.hardpoints.forEach(hardpoint => {
-      // Only include weapon mount types (parent hardpoints only, not children)
+      // Only include turrets and missile racks (skip countermeasures)
       if (!hardpoint.item || !weaponTypes.includes(hardpoint.type)) {
         return;
       }
 
-      // Get the stock weapon from children (if available)
       let stockWeapon = null;
-      if (hardpoint.children && hardpoint.children.length > 0) {
-        const firstChild = hardpoint.children[0];
-        if (firstChild.item) {
-          stockWeapon = {
-            uuid: firstChild.item.uuid,
-            name: firstChild.item.name,
-            type: firstChild.type,
-            size: firstChild.item.size,
-            sub_type: firstChild.sub_type
-          };
+
+      // For Turrets: stock weapon is the first gun in children
+      if (hardpoint.type === 'Turret') {
+        if (hardpoint.children && hardpoint.children.length > 0) {
+          const firstChild = hardpoint.children[0];
+          if (firstChild.item && firstChild.type === 'WeaponGun') {
+            stockWeapon = {
+              uuid: firstChild.item.uuid,
+              name: firstChild.item.name,
+              type: firstChild.type,
+              size: firstChild.item.size,
+              sub_type: firstChild.sub_type
+            };
+          }
         }
+      }
+
+      // For MissileLauncher: stock weapon is the rack itself (the mount)
+      if (hardpoint.type === 'MissileLauncher') {
+        stockWeapon = {
+          uuid: hardpoint.item.uuid,
+          name: hardpoint.item.name,
+          type: hardpoint.type,
+          size: hardpoint.item.size,
+          sub_type: hardpoint.sub_type
+        };
       }
 
       weapons[hardpoint.name] = {

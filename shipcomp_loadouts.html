@@ -646,18 +646,21 @@
         localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
       }
 
-      // Group weapons by type
+      // Group weapons by type (skip countermeasures)
       const weaponGroups = {
         'Turrets': [],
-        'Missile Racks': [],
-        'Countermeasures': []
+        'Missile Racks': []
       };
 
       for (const [hardpointName, wpnData] of Object.entries(stockWeapons)) {
         const group = wpnData.mount_type === 'Turret' ? 'Turrets'
                     : wpnData.mount_type === 'MissileLauncher' ? 'Missile Racks'
-                    : 'Countermeasures';
-        weaponGroups[group].push({ hardpointName, ...wpnData });
+                    : null;
+
+        // Skip countermeasures
+        if (group) {
+          weaponGroups[group].push({ hardpointName, ...wpnData });
+        }
       }
 
       // Sort within each group
@@ -707,12 +710,26 @@
         weapons.forEach(wpn => {
           const slotData = shipLoadout[wpn.hardpointName] || { stock: null, current: null, target: null };
 
-          // Get available weapons of the same type/size as stock
+          // Get available weapons based on mount type
           let availableWeapons = [];
-          if (wpn.stock_weapon) {
-            availableWeapons = allComponents.filter(c =>
-              c.type === wpn.stock_weapon.type && c.size === wpn.stock_weapon.size
-            ).sort((a, b) => a.name.localeCompare(b.name));
+          let componentTypeToMatch = null;
+
+          if (wpn.mount_type === 'Turret') {
+            // For turrets: show available WeaponGun components matching stock gun size
+            componentTypeToMatch = 'WeaponGun';
+            if (wpn.stock_weapon) {
+              availableWeapons = allComponents.filter(c =>
+                c.type === 'WeaponGun' && c.size === wpn.stock_weapon.size
+              ).sort((a, b) => a.name.localeCompare(b.name));
+            }
+          } else if (wpn.mount_type === 'MissileLauncher') {
+            // For missiles: show available MissileLauncher components matching rack size
+            componentTypeToMatch = 'MissileLauncher';
+            if (wpn.stock_weapon) {
+              availableWeapons = allComponents.filter(c =>
+                c.type === 'MissileLauncher' && c.size === wpn.stock_weapon.size
+              ).sort((a, b) => a.name.localeCompare(b.name));
+            }
           }
 
           const stockValue = wpn.stock_weapon ? `component:${wpn.stock_weapon.uuid}` : null;
