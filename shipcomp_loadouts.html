@@ -646,33 +646,35 @@
         localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
       }
 
-      // Group weapons by type: Gun Turrets → Missile Racks → Missile Turrets
-      const weaponGroups = {
-        'Gun Turrets': [],
-        'Missile Racks': [],
-        'Missile Turrets': []
-      };
+      // Group weapons by mount sub_type (how they're mounted)
+      const weaponGroups = {};
+
+      // Define sort order for groups
+      const groupOrder = ['Nose Mounted', 'Wing Mounted', 'Gimbal', 'Turret', 'Missile Rack'];
 
       for (const [hardpointName, wpnData] of Object.entries(stockWeapons)) {
-        let group = null;
+        const group = wpnData.mount_sub_type || 'Other';
 
-        if (wpnData.mount_type === 'Turret') {
-          // Distinguish gun turrets from missile turrets
-          group = wpnData.turret_weapon_type === 'WeaponGun' ? 'Gun Turrets' : 'Missile Turrets';
-        } else if (wpnData.mount_type === 'MissileLauncher') {
-          group = 'Missile Racks';
+        if (!weaponGroups[group]) {
+          weaponGroups[group] = [];
         }
-
-        // Skip countermeasures
-        if (group) {
-          weaponGroups[group].push({ hardpointName, ...wpnData });
-        }
+        weaponGroups[group].push({ hardpointName, ...wpnData });
       }
 
-      // Sort within each group
+      // Sort within each group by hardpoint name
       for (const group in weaponGroups) {
         weaponGroups[group].sort((a, b) => a.hardpointName.localeCompare(b.hardpointName));
       }
+
+      // Convert to sorted array of [group, weapons] for consistent display order
+      const sortedGroups = Object.entries(weaponGroups).sort(([groupA], [groupB]) => {
+        const indexA = groupOrder.indexOf(groupA);
+        const indexB = groupOrder.indexOf(groupB);
+        if (indexA === -1 && indexB === -1) return groupA.localeCompare(groupB);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
 
       // Format weapon mount name
       function formatWeaponMountName(name, subType) {
@@ -703,7 +705,7 @@
 
       let html = headerHtml;
 
-      for (const [groupName, weapons] of Object.entries(weaponGroups)) {
+      for (const [groupName, weapons] of sortedGroups) {
         if (weapons.length === 0) continue;
 
         // Group header
