@@ -353,12 +353,14 @@ const DataHelpers = {
       }
 
       let stockWeapon = null;
+      let turretWeaponType = null;
 
-      // For Turrets: stock weapon is the first gun in children
+      // For Turrets: stock weapon is the first gun or missile in children
       if (hardpoint.type === 'Turret') {
         if (hardpoint.children && hardpoint.children.length > 0) {
           const firstChild = hardpoint.children[0];
-          if (firstChild.item && firstChild.type === 'WeaponGun') {
+          if (firstChild.item) {
+            turretWeaponType = firstChild.type;
             stockWeapon = {
               uuid: firstChild.item.uuid,
               name: firstChild.item.name,
@@ -387,6 +389,7 @@ const DataHelpers = {
         mount_type: hardpoint.type,
         mount_sub_type: hardpoint.sub_type,
         mount_size: hardpoint.item.size,
+        turret_weapon_type: turretWeaponType,
         stock_weapon: stockWeapon
       };
     });

@@ -646,16 +646,22 @@
         localStorage.setItem('shipcomp-loadouts', JSON.stringify(loadouts));
       }
 
-      // Group weapons by type (skip countermeasures)
+      // Group weapons by type: Gun Turrets → Missile Racks → Missile Turrets
       const weaponGroups = {
-        'Turrets': [],
-        'Missile Racks': []
+        'Gun Turrets': [],
+        'Missile Racks': [],
+        'Missile Turrets': []
       };
 
       for (const [hardpointName, wpnData] of Object.entries(stockWeapons)) {
-        const group = wpnData.mount_type === 'Turret' ? 'Turrets'
-                    : wpnData.mount_type === 'MissileLauncher' ? 'Missile Racks'
-                    : null;
+        let group = null;
+
+        if (wpnData.mount_type === 'Turret') {
+          // Distinguish gun turrets from missile turrets
+          group = wpnData.turret_weapon_type === 'WeaponGun' ? 'Gun Turrets' : 'Missile Turrets';
+        } else if (wpnData.mount_type === 'MissileLauncher') {
+          group = 'Missile Racks';
+        }
 
         // Skip countermeasures
         if (group) {
@@ -736,7 +742,11 @@
           const currentOptions = buildTargetOptions(availableWeapons, slotData.current || stockValue, wpn.hardpointName);
           const targetOptions = buildTargetOptions(availableWeapons, slotData.target, wpn.hardpointName);
 
-          const mountDisplay = `${wpn.mount_name}`;
+          // For turrets, show the weapon size; for missiles, just show mount name
+          let mountDisplay = `${wpn.mount_name}`;
+          if (wpn.mount_type === 'Turret' && wpn.stock_weapon) {
+            mountDisplay = `${wpn.mount_name} (Size ${wpn.stock_weapon.size})`;
+          }
 
           html += `
             <div class="hardpoint-row">
