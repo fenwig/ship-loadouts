@@ -744,16 +744,19 @@
           const currentOptions = buildTargetOptions(availableWeapons, slotData.current || stockValue, wpn.hardpointName);
           const targetOptions = buildTargetOptions(availableWeapons, slotData.target, wpn.hardpointName);
 
-          // For turrets, show the weapon size; for missiles, just show mount name
-          let mountDisplay = `${wpn.mount_name}`;
-          if (wpn.mount_type === 'Turret' && wpn.stock_weapon) {
-            mountDisplay = `${wpn.mount_name} (Size ${wpn.stock_weapon.size})`;
+          // Display stock weapon name (with class/grade if available)
+          let stockWeaponDisplay = 'N/A';
+          if (wpn.stock_weapon) {
+            stockWeaponDisplay = wpn.stock_weapon.name;
+            if (wpn.stock_weapon.class && wpn.stock_weapon.grade) {
+              stockWeaponDisplay += ` (${wpn.stock_weapon.class} ${wpn.stock_weapon.grade})`;
+            }
           }
 
           html += `
             <div class="hardpoint-row">
               <div class="hp-col-component">${formatWeaponMountName(wpn.hardpointName, wpn.mount_sub_type)}</div>
-              <div class="hp-col-stock">${mountDisplay}</div>
+              <div class="hp-col-stock">${stockWeaponDisplay}</div>
               <div class="hp-col-current">
                 <select class="hp-dropdown" onchange="saveLoadoutSlot('${wpn.hardpointName}', 'current', this.value)">
                   ${currentOptions}
